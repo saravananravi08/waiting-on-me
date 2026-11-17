@@ -1,0 +1,11 @@
+{
+  "name": "waiting-on-me",
+  "owner": { "name": "Fabulate" },
+  "plugins": [
+    {
+      "name": "waiting-on-me",
+      "source": "./",
+      "description": "Shows who is waiting on you, from GitHub and Linear, when Claude Code starts."
+    }
+  ]
+}

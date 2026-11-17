@@ -1,0 +1,12 @@
+# Credentials must never be committed
+.env
+.env.*
+*.env
+/env
+*.pem
+*.key
+
+# Local state and tooling
+.cache/
+node_modules/
+*.log
