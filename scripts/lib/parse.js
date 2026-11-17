@@ -32,7 +32,8 @@ function login(user) {
 // gh search prs --review-requested=@me --state open --json number,title,url,author,updatedAt,repository
 function parseReviewRequested(prs) {
   if (!Array.isArray(prs)) throw new Error('unexpected review-request output (not a list)');
-  return prs.map((pr) => ({
+  // A draft is not ready for review, so it is not waiting on anyone yet.
+  return prs.filter((pr) => pr && pr.isDraft !== true).map((pr) => ({
     source: 'github',
     kind: 'review requested',
     who: login(pr.author),
@@ -325,6 +326,43 @@ function parseSlackMessages(raw) {
   return out;
 }
 
+// True if `me` wrote anything in the thread after the parent message. Slack formats a thread
+// differently from a channel (a "THREAD PARENT MESSAGE" block with "From:" lines), so this
+// looks at every author line after the parent, whichever form it takes.
+function repliedInThread(raw, parentTs, me) {
+  const text = unwrap(raw, 'messages');
+  const at = text.indexOf(`Message TS: ${parentTs}`);
+  const after = at === -1 ? text : text.slice(at + 1);
+  return after
+    .split('\n')
+    .some((line) => /^(From:|=== Message from )/.test(line.trim()) && line.includes(`(${me})`));
+}
+
+// The pull requests and Linear issues a nudge points at.
+function nudgeLinks(text) {
+  const t = String(text || '');
+  const prs = [...t.matchAll(/https:\/\/github\.com\/[^\s/|>]+\/[^\s/|>]+\/pull\/\d+/g)].map((m) => m[0]);
+  const issues = [...t.matchAll(/linear\.app\/[^\s/|>]+\/issue\/([A-Za-z][A-Za-z0-9]*-\d+)/g)].map((m) => m[1].toUpperCase());
+  return { prs: [...new Set(prs)], issues: [...new Set(issues)] };
+}
+
+// A nudge about a pull request is settled once the pull request is merged or closed,
+// or once I have reviewed it after the nudge was sent.
+//   pr: { state, latestReviews: [{ author: { login }, submittedAt }] } from gh pr view
+function prSettlesNudge(pr, me, sinceIso) {
+  if (!pr || !pr.state) return false;
+  if (pr.state !== 'OPEN') return true;
+  const since = Date.parse(sinceIso) || 0;
+  return (pr.latestReviews || []).some((r) => r && r.author && r.author.login === me && Date.parse(r.submittedAt) >= since);
+}
+
+// True when a stored Linear reply says the issue is finished (done or cancelled).
+function linearIssueFinished(part) {
+  if (!part || !part.text) return false;
+  const m = String(part.text).match(/"statusType"\s*:\s*"([a-zA-Z]+)"/);
+  return Boolean(m) && (m[1] === 'completed' || m[1] === 'canceled');
+}
+
 // Nudges addressed to me that I have not answered in the thread.
 function parseSlackMcp(record) {
   if (!record || !record.me || !record.channelId || !record.channel) throw new Error('unexpected Slack data');
@@ -333,11 +371,12 @@ function parseSlackMcp(record) {
   for (const msg of parseSlackMessages(record.channel.text)) {
     if (msg.userId === me || !msg.text.includes(NUDGE_TAG) || !msg.text.includes(`<@${me}`)) continue;
     const thread = record.threads && record.threads[msg.ts];
-    if (thread && thread.text) {
-      const replies = parseSlackMessages(thread.text).filter((m) => m.ts !== msg.ts);
-      if (replies.some((m) => m.userId === me)) continue; // answered
-    }
+    if (thread && thread.text && repliedInThread(thread.text, msg.ts, me)) continue; // answered
+    const links = nudgeLinks(msg.text);
+    // The ticket the nudge is about is finished, so nobody is waiting any more.
+    if (links.issues.length > 0 && links.issues.every((id) => linearIssueFinished(record.linearIssues && record.linearIssues[id]))) continue;
     const title = msg.text
+      .replace(/\n?\*Sent using\*[^\n]*$/i, '') // footer Slack adds to messages posted through Claude
       .split(NUDGE_TAG).join('')
       .replace(/<@U[A-Z0-9]+(?:\|[^>]*)?>/g, '')
       .replace(/<(https?:\/\/[^|>\s]+)(?:\|[^>]*)?>/g, '$1')
@@ -351,6 +390,7 @@ function parseSlackMcp(record) {
       ref: `#${record.channelName || 'waiting-on-me'}`,
       url: `https://slack.com/app_redirect?channel=${record.channelId}&message_ts=${msg.ts}`,
       since: new Date(Number(msg.ts) * 1000).toISOString(),
+      ...(links.prs.length ? { prUrls: links.prs } : {}),
     });
   }
   return items;
@@ -358,3 +398,5 @@ function parseSlackMcp(record) {
 
 module.exports.parseSlackMessages = parseSlackMessages;
 module.exports.parseSlackMcp = parseSlackMcp;
+module.exports.nudgeLinks = nudgeLinks;
+module.exports.prSettlesNudge = prSettlesNudge;

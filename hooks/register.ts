@@ -140,9 +140,25 @@ async function fetchSlack($: any, dir: string, patient: boolean) {
           record.channel = { text }
           // Read the thread of each nudge addressed to this person, to see if they answered.
           const threads: Record<string, unknown> = {}
-          const wanted = inner(text, 'messages')
+          const mine = inner(text, 'messages')
             .split('=== Message from ')
             .filter(m => m.includes(TAG) && m.includes(`<@${me}`) && !m.includes(`(${me}) at `))
+          // Look up the Linear tickets these nudges point at, so finished ones can be dropped.
+          const ids = [...new Set(mine.flatMap(m => [...m.matchAll(/linear\.app\/[^\s/|>]+\/issue\/([A-Za-z][A-Za-z0-9]*-\d+)/g)].map(x => x[1].toUpperCase())))].slice(0, MAX_THREADS)
+          const linear = ids.length > 0 ? await findServer($, 'get_issue', /linear/i, false) : null
+          if (linear) {
+            const issues: Record<string, unknown> = {}
+            for (const id of ids) {
+              try {
+                const got = await $.mcp.call(linear, 'get_issue', { id, fields: ['status', 'statusType'] })
+                issues[id] = got.isError ? { error: textOf(got).slice(0, 150) } : { text: textOf(got) }
+              } catch (err) {
+                issues[id] = { error: errorText(err) }
+              }
+            }
+            record.linearIssues = issues
+          }
+          const wanted = mine
             .map(m => /Message TS: ([0-9.]+)/.exec(m)?.[1])
             .filter((ts): ts is string => Boolean(ts))
             .slice(0, MAX_THREADS)

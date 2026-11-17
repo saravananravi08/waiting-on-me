@@ -128,24 +128,34 @@ function banner(result) {
 
 const mdCell = (s) => clean(s, 120).replace(/\|/g, '\\|');
 
-function table(result, { dashboardPath } = {}) {
+const TABLE_LIMIT = 10;
+
+// The /waiting table: the most urgent items only, with the dashboard for the rest.
+// limit: how many rows to print (0 or less prints everything).
+function table(result, { dashboardPath, limit = TABLE_LIMIT } = {}) {
   const items = parse.sortItems(result.items || []);
+  const shown = limit > 0 ? items.slice(0, limit) : items;
+  const link = dashboardPath || '';
   const lines = [];
   lines.push(`Waiting on you, as of ${formatDate(result.fetchedAt)} (${countLine(result)})`);
   lines.push('');
-  if (items.length > 0) {
-    lines.push('| # | Source | Kind | From | What | Since | Link |');
+  if (shown.length > 0) {
+    lines.push('| # | Source | Kind | From | What | Waiting | Link |');
     lines.push('| --- | --- | --- | --- | --- | --- | --- |');
-    items.forEach((item, i) => {
-      lines.push(`| ${i + 1} | ${SOURCE_NAMES[item.source] || item.source} | ${item.kind} | ${mdCell(item.who)} | ${mdCell(item.ref)} ${mdCell(item.title)} | ${formatDate(item.since)} | ${safeUrl(item.url)} |`);
+    shown.forEach((item, i) => {
+      lines.push(`| ${i + 1} | ${SOURCE_NAMES[item.source] || item.source} | ${item.kind} | ${mdCell(item.who)} | ${mdCell(item.ref)} ${mdCell(item.title)} | ${waited(item.since, result.fetchedAt).text}, since ${formatDate(item.since)} | ${safeUrl(item.url)} |`);
     });
   } else {
     lines.push('Nothing is waiting on you from the sources that responded.');
   }
   lines.push('');
+  if (shown.length < items.length) {
+    lines.push(`Showing the ${shown.length} most urgent of ${items.length}.${link ? ` See all ${items.length} on the dashboard: ${link}` : ''}`);
+  } else if (link) {
+    lines.push(`Dashboard: ${link}`);
+  }
   lines.push(`Counts: ${kindCounts(result).map((k) => `${k.kind} ${k.display}`).join('; ')}`);
   for (const note of sourceNotes(result)) lines.push(`Note: ${note}`);
-  if (dashboardPath) lines.push(`Dashboard: ${dashboardPath}`);
   return lines.join('\n');
 }
 

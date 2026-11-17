@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 'use strict';
 // Backs the /waiting command: refreshes now, then prints the table.
-// Usage: waiting.js [--no-refresh]
+// Usage: waiting.js [--no-refresh] [--all]
+//   --all  print every item instead of the ten most urgent
 const path = require('path');
 const config = require(path.join(__dirname, 'lib', 'config.js'));
 const collect = require(path.join(__dirname, 'lib', 'collect.js'));
@@ -16,7 +17,7 @@ async function main() {
     console.log('Nothing could be fetched and there is no earlier result. Run: node scripts/collect --json for details.');
     return;
   }
-  console.log(render.table(result, { dashboardPath: config.dashboardUrl() ? `${config.dashboardUrl()} (file: ${p.html})` : p.html }));
+  console.log(render.table(result, { dashboardPath: config.dashboardUrl() ? `${config.dashboardUrl()} (file: ${p.html})` : p.html, ...(process.argv.includes('--all') ? { limit: 0 } : {}) }));
 }
 
 main().catch((err) => {

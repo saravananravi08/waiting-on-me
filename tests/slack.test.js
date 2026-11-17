@@ -104,3 +104,61 @@ test('merge mode: a recent GitHub result is reused, its time kept, and new Slack
     process.env.PATH = savedPath;
   }
 });
+
+test('nudges: the footer Slack adds to messages posted through Claude is not part of the title', () => {
+  const rec = fixture();
+  rec.threads = {};
+  rec.channel.text = JSON.stringify({ messages: '=== Message from Jo Example <jo@example.com> (U0JO000001) at 2026-11-17 18:14:00 IST === \nMessage TS: 1794919440.648209\n<@U0ME000001|Me Example> waiting on you: test of the plugin, no action needed. [wom:v1]\n*Sent using* <@U0APP00001|Claude>' });
+  const [nudge] = parse.parseSlackMcp(rec);
+  assert.equal(nudge.title, 'test of the plugin, no action needed.');
+  assert.equal(nudge.who, 'Jo Example');
+});
+
+test('nudges: a reply is recognised in the format Slack uses for threads', () => {
+  const parent = '=== THREAD PARENT MESSAGE ===\nFrom: Jo Example <jo@example.com> (U0JO000001)\nTime: 2026-11-17 18:10:00 IST\nMessage TS: 1794919200.000100\n<@U0ME000001|Me Example> waiting on you: please review. [wom:v1]\n\n';
+  const base = fixture();
+  const withThread = (text) => ({ ...base, threads: { '1794919200.000100': { text: JSON.stringify({ messages: text }) } } });
+  const has = (rec) => parse.parseSlackMcp(rec).some((i) => i.url.endsWith('1794919200.000100'));
+  assert.equal(has(withThread(parent + 'No thread messsages\n')), true, 'no reply yet, still waiting');
+  assert.equal(has(withThread(parent + '=== THREAD REPLIES ===\nFrom: Sam Example <sam@example.com> (U0SAM00001)\nTime: x\nMessage TS: 1794919260.000110\nI can take it')), true, 'someone else replied');
+  assert.equal(has(withThread(parent + '=== THREAD REPLIES ===\nFrom: Me Example <me@example.com> (U0ME000001)\nTime: x\nMessage TS: 1794919260.000110\ndone')), false, 'I replied');
+});
+
+test('nudge links: pull requests and Linear tickets are found in the text', () => {
+  const l = parse.nudgeLinks('see <https://github.com/o/r/pull/41|PR 41> and https://linear.app/example/issue/ex-50/release-notes and https://github.com/o/r/pull/41');
+  assert.deepEqual(l, { prs: ['https://github.com/o/r/pull/41'], issues: ['EX-50'] });
+});
+
+test('a nudge about a pull request is settled when it is merged, closed, or I reviewed it since', () => {
+  const since = '2026-11-17T12:00:00Z';
+  assert.equal(parse.prSettlesNudge({ state: 'MERGED' }, 'me', since), true);
+  assert.equal(parse.prSettlesNudge({ state: 'CLOSED' }, 'me', since), true);
+  assert.equal(parse.prSettlesNudge({ state: 'OPEN', latestReviews: [] }, 'me', since), false);
+  assert.equal(parse.prSettlesNudge({ state: 'OPEN', latestReviews: [{ author: { login: 'me' }, submittedAt: '2026-11-17T13:00:00Z' }] }, 'me', since), true);
+  assert.equal(parse.prSettlesNudge({ state: 'OPEN', latestReviews: [{ author: { login: 'me' }, submittedAt: '2026-11-16T13:00:00Z' }] }, 'me', since), false, 'a review from before the nudge does not count');
+  assert.equal(parse.prSettlesNudge({ state: 'OPEN', latestReviews: [{ author: { login: 'jo' }, submittedAt: '2026-11-17T13:00:00Z' }] }, 'me', since), false);
+  assert.equal(parse.prSettlesNudge(null, 'me', since), false);
+});
+
+test('settleNudges: drops settled nudges, keeps open ones and ones that cannot be checked', async () => {
+  const nudge = (n, extra = {}) => ({ source: 'slack', kind: 'nudge', who: 'Jo', title: `t${n}`, url: `u${n}`, since: '2026-11-17T12:00:00Z', prUrls: [`https://github.com/o/r/pull/${n}`], ...extra });
+  const other = { source: 'slack', kind: 'nudge', who: 'Jo', title: 'no link', url: 'u0', since: '2026-11-17T12:00:00Z' };
+  const fakeGh = async (args) => {
+    if (args[0] === 'api') return 'me\n';
+    if (args[2].endsWith('/1')) return JSON.stringify({ state: 'MERGED', latestReviews: [] });
+    if (args[2].endsWith('/2')) return JSON.stringify({ state: 'OPEN', latestReviews: [] });
+    throw new Error('gh failed');
+  };
+  const out = await sources.settleNudges([nudge(1), nudge(2), nudge(3), other], fakeGh);
+  assert.deepEqual(out.map((i) => i.title), ['t2', 't3', 'no link']);
+  assert.ok(out.every((i) => !('prUrls' in i)), 'the helper field is not written out');
+});
+
+test('a nudge about a Linear ticket is dropped once that ticket is done or cancelled', () => {
+  const rec = fixture();
+  const has = (r) => parse.parseSlackMcp(r).some((i) => /EX-50/.test(i.title));
+  assert.equal(has(rec), true, 'no status known, keep it');
+  assert.equal(has({ ...rec, linearIssues: { 'EX-50': { text: '{"status":"In Review","statusType":"started","id":"EX-50"}' } } }), true);
+  assert.equal(has({ ...rec, linearIssues: { 'EX-50': { text: '{"status":"Done","statusType":"completed","id":"EX-50"}' } } }), false);
+  assert.equal(has({ ...rec, linearIssues: { 'EX-50': { error: 'lookup failed' } } }), true, 'a failed lookup keeps the nudge');
+});

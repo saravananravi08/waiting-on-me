@@ -133,3 +133,24 @@ test('waited: minutes, hours and days', () => {
   assert.equal(render.waited('2026-11-10T12:00:00Z', now).text, '7 d');
   assert.equal(render.waited('nonsense', now).text, 'unknown');
 });
+
+test('table: shows only the ten most urgent and points to the dashboard for the rest', () => {
+  const items = [];
+  for (let i = 0; i < 25; i++) items.push(item({ url: `https://github.com/o/r/pull/${i}`, since: `2026-11-${String(i + 1).padStart(2, '0')}T00:00:00Z` }));
+  items.push(item({ kind: 'changes requested', url: 'https://github.com/o/r/pull/99' }));
+  const t = render.table(result({ items }), { dashboardPath: 'http://127.0.0.1:8787/' });
+  assert.equal(t.split('\n').filter((l) => /^\| \d+ \|/.test(l)).length, 10);
+  assert.match(t, /\| 1 \| GitHub \| changes requested/, 'most urgent first');
+  assert.match(t, /Showing the 10 most urgent of 26\. See all 26 on the dashboard: http:\/\/127\.0\.0\.1:8787\//);
+  assert.match(t, /Counts: .*review requested 25/, 'the counts still cover everything');
+});
+
+test('table: a short list is shown whole, and a limit of 0 prints everything', () => {
+  const few = render.table(result({ items: [item()] }), { dashboardPath: '/x/index.html' });
+  assert.doesNotMatch(few, /Showing the/);
+  assert.match(few, /Dashboard: \/x\/index\.html/);
+  const items = [];
+  for (let i = 0; i < 25; i++) items.push(item({ url: `https://github.com/o/r/pull/${i}` }));
+  const all = render.table(result({ items }), { dashboardPath: '/x/index.html', limit: 0 });
+  assert.equal(all.split('\n').filter((l) => /^\| \d+ \|/.test(l)).length, 25);
+});

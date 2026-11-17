@@ -61,7 +61,7 @@ const MY_PRS_QUERY = `query($q: String!) {
 async function githubReviewRequested() {
   const out = await gh([
     'search', 'prs', '--review-requested=@me', '--state', 'open', '--limit', '100',
-    '--json', 'number,title,url,author,updatedAt,createdAt,repository',
+    '--json', 'number,title,url,author,updatedAt,createdAt,repository,isDraft',
   ]);
   return parse.parseReviewRequested(json(out, 'gh search'));
 }
@@ -218,4 +218,26 @@ async function fetchLinearApi(env, fetchImpl) {
   }
 }
 
-module.exports = { fetchGithub, fetchLinear, readLinearMcp, readSlackMcp, LINEAR_QUERY, MY_PRS_QUERY };
+// Drops nudges whose pull requests are all settled (merged, closed, or reviewed by me since
+// the nudge). A lookup that fails keeps the nudge: better shown than silently lost.
+async function settleNudges(items, ghImpl = gh) {
+  const withPrs = items.filter((i) => i.kind === 'nudge' && Array.isArray(i.prUrls) && i.prUrls.length > 0);
+  if (withPrs.length === 0) return items.map(({ prUrls, ...rest }) => rest);
+  const me = await ghImpl(['api', 'user', '--jq', '.login']).then((t) => t.trim()).catch(() => '');
+  const settled = new Set();
+  await Promise.all(
+    withPrs.map(async (item) => {
+      try {
+        const states = await Promise.all(
+          item.prUrls.map(async (url) => parse.prSettlesNudge(json(await ghImpl(['pr', 'view', url, '--json', 'state,latestReviews']), 'gh pr view'), me, item.since))
+        );
+        if (states.every(Boolean)) settled.add(item);
+      } catch {
+        // keep the nudge
+      }
+    })
+  );
+  return items.filter((i) => !settled.has(i)).map(({ prUrls, ...rest }) => rest);
+}
+
+module.exports = { settleNudges, fetchGithub, fetchLinear, readLinearMcp, readSlackMcp, LINEAR_QUERY, MY_PRS_QUERY };

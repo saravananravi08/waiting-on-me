@@ -131,3 +131,10 @@ test('notifications: a mention where I wrote the latest comment is dropped, a re
   assert.equal(items.some((i) => i.kind === 'review requested'), true);
   assert.equal(items.filter((i) => i.kind === 'mention').length, 2);
 });
+
+test('review requested: draft pull requests are left out', () => {
+  const prs = fixture('github-review-requested.json').map((p, i) => ({ ...p, isDraft: i === 0 }));
+  const items = parse.parseReviewRequested(prs);
+  assert.equal(items.length, 2);
+  assert.equal(items.some((i) => i.ref === 'example-org/widgets#41'), false);
+});

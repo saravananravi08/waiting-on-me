@@ -89,6 +89,7 @@ async function refresh({ waitIfBusy = true, merge = false, env = process.env } =
       sources.fetchLinear(env),
     ]);
     const slack = sources.readSlackMcp(env);
+    if (slack) slack.items = await sources.settleNudges(slack.items);
     const items = parse.sortItems(parse.dedupe([...github.items, ...linear.items, ...(slack ? slack.items : [])]));
     const strip = ({ status, error, warning, parts }) => ({ status, ...(error ? { error } : {}), ...(warning ? { warning } : {}), ...(parts ? { parts } : {}) });
     const result = {
