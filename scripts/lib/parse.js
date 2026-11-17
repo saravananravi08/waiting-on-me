@@ -174,6 +174,8 @@ function parseLinear(response) {
     if (!issue) continue;
     const state = issue.state || {};
     if (!NOT_STARTED.includes(state.type)) continue;
+    // A ticket I wrote for myself is my own to-do list; nobody is waiting on it.
+    if (issue.creator && data.viewer.id && issue.creator.id === data.viewer.id) continue;
     items.push({
       source: 'linear',
       kind: 'assigned',
@@ -188,6 +190,8 @@ function parseLinear(response) {
   const notes = (data.notifications && data.notifications.nodes) || [];
   for (const n of notes) {
     if (!n || n.readAt || n.archivedAt || !n.issue) continue;
+    const stateType = n.issue.state && n.issue.state.type;
+    if (stateType === 'completed' || stateType === 'canceled') continue;
     const match = LINEAR_NOTIFICATION_KINDS.find(([re]) => re.test(n.type || ''));
     if (!match) continue;
     items.push({
@@ -266,9 +270,19 @@ function parseLinearMcp(record) {
   const notes = parseMcpJson(record.notifications, 'get_notifications');
   const items = [];
 
+  // My own name and email, from the whoami reply the session stores.
+  const mine = new Set();
+  try {
+    const user = JSON.parse(record.whoami.text).user || {};
+    for (const v of [user.name, user.email, user.displayName]) if (v) mine.add(String(v).toLowerCase());
+  } catch {
+    // identity unknown: nothing can be recognised as mine
+  }
   for (const issue of lists.flatMap((l) => l.issues || [])) {
     if (!issue || !issue.url) continue;
     if (!NOT_STARTED.includes(issue.statusType)) continue;
+    // A ticket I wrote for myself is my own to-do list; nobody is waiting on it.
+    if (issue.createdBy && mine.has(String(issue.createdBy).toLowerCase())) continue;
     items.push({
       source: 'linear',
       kind: 'assigned',
@@ -282,6 +296,9 @@ function parseLinearMcp(record) {
 
   for (const n of (notes && notes.notifications) || []) {
     if (!n || n.readAt || n.archivedAt || !/mention/i.test(n.type || '')) continue;
+    // A mention on a ticket that is done or cancelled is no longer waiting on anyone.
+    const key = issueKeyFromUrl(n.url);
+    if (key && linearIssueFinished(record.issueStatus && record.issueStatus[key])) continue;
     const who = typeof n.subtitle === 'string' ? (n.subtitle.match(SUBTITLE_VERB) || [])[1] : '';
     items.push({
       source: 'linear',

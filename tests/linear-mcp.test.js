@@ -89,3 +89,25 @@ test('fetchLinear: Claude reported an error and there is no key, so the error is
   assert.equal(got.status, 'failed');
   assert.match(got.error, /Linear through Claude/);
 });
+
+test('mentions: dropped when the ticket is done or cancelled, kept when open or when the lookup failed', () => {
+  const refs = (issueStatus) => parse.parseLinearMcp(record({ issueStatus })).filter((i) => i.kind === 'mention').map((i) => i.ref);
+  assert.deepEqual(refs(undefined), ['EX-40', 'EX-41', 'EX-44', '']);
+  assert.deepEqual(
+    refs({
+      'EX-40': { text: '{"status":"Done","statusType":"completed","id":"EX-40"}' },
+      'EX-41': { text: '{"status":"In Review","statusType":"started","id":"EX-41"}' },
+      'EX-44': { text: '{"status":"Cancelled","statusType":"canceled","id":"EX-44"}' },
+    }),
+    ['EX-41', '']
+  );
+  assert.deepEqual(refs({ 'EX-40': { error: 'lookup failed' } }), ['EX-40', 'EX-41', 'EX-44', '']);
+});
+
+test('issues: tickets I created myself are left out; without my identity they are kept', () => {
+  const whoami = { text: '{"user":{"id":"u1","name":"Jo Example","email":"jo@example.com","displayName":"jo"}}' };
+  const refs = (extra) => parse.parseLinearMcp(record(extra)).filter((i) => i.kind === 'assigned').map((i) => i.ref);
+  assert.deepEqual(refs({ whoami }), ['EX-34'], 'EX-33 was created by Jo, who is me here');
+  assert.deepEqual(refs({}), ['EX-33', 'EX-34']);
+  assert.deepEqual(refs({ whoami: { text: 'not json' } }), ['EX-33', 'EX-34']);
+});

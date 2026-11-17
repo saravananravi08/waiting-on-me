@@ -16,6 +16,7 @@ const SLACK_FILE = 'slack-mcp.json'
 const FIND_ATTEMPTS = 10
 const FIND_WAIT_MS = 4_000
 const MAX_THREADS = 10
+const MAX_LOOKUPS = 25
 const TAG = '[wom:v1]'
 
 type Block = { type?: string; text?: string }
@@ -101,6 +102,13 @@ async function fetchLinear($: any, dir: string, patient: boolean) {
     record.server = server
     // Tickets assigned to this person that they have not picked up yet: Backlog and Todo.
     const fields = ['title', 'url', 'updatedAt', 'status', 'statusType', 'createdBy']
+    // Who this person is, so tickets they wrote for themselves can be left out.
+    try {
+      const who = await $.mcp.call(server, 'whoami', {})
+      if (!who.isError) record.whoami = { text: textOf(who) }
+    } catch {
+      // without it, self-written tickets are simply kept
+    }
     const settled = await Promise.allSettled([
       $.mcp.call(server, 'get_notifications', { unreadOnly: true, limit: 50 }),
       $.mcp.call(server, 'list_issues', { assignee: 'me', state: 'backlog', limit: 100, fields }),
@@ -113,6 +121,26 @@ async function fetchLinear($: any, dir: string, patient: boolean) {
     )
     record.notifications = parts[0]
     record.issueLists = parts.slice(1)
+    // Look up the tickets behind unread mentions, so mentions on finished tickets can be dropped.
+    try {
+      const list = JSON.parse((parts[0] as { text?: string }).text ?? '{}').notifications ?? []
+      const keys = [...new Set(list
+        .filter((n: { type?: string; readAt?: unknown }) => /mention/i.test(n.type ?? '') && !n.readAt)
+        .map((n: { url?: string }) => /\/(?:issue|review)\/([A-Za-z][A-Za-z0-9]*-\d+)/.exec(n.url ?? '')?.[1]?.toUpperCase())
+        .filter(Boolean))].slice(0, MAX_LOOKUPS) as string[]
+      const status: Record<string, unknown> = {}
+      await Promise.all(keys.map(async id => {
+        try {
+          const got = await $.mcp.call(server, 'get_issue', { id, fields: ['status', 'statusType'] })
+          status[id] = got.isError ? { error: textOf(got).slice(0, 150) } : { text: textOf(got) }
+        } catch (err) {
+          status[id] = { error: errorText(err) }
+        }
+      }))
+      record.issueStatus = status
+    } catch {
+      // without statuses the mentions are simply all kept
+    }
   }
   await $.fs.write(`${dir}/${LINEAR_FILE}`, JSON.stringify(record))
 }

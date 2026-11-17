@@ -129,14 +129,14 @@ const LINEAR_QUERY = `query {
   viewer {
     id name
     assignedIssues(first: 100, orderBy: updatedAt, filter: { state: { type: { in: ["backlog", "unstarted"] } } }) {
-      nodes { identifier title url updatedAt creator { name } state { name type } }
+      nodes { identifier title url updatedAt creator { id name } state { name type } }
     }
   }
   notifications(first: 50) {
     nodes {
       id type createdAt readAt archivedAt
       actor { name }
-      ... on IssueNotification { issue { identifier title url } comment { url } }
+      ... on IssueNotification { issue { identifier title url state { type } } comment { url } }
     }
   }
 }`;

@@ -142,3 +142,18 @@ test('review requested: draft pull requests are left out', () => {
   assert.equal(items.length, 2);
   assert.equal(items.some((i) => i.ref === 'example-org/widgets#41'), false);
 });
+
+test('linear (API key): a mention on a finished ticket is dropped', () => {
+  const data = fixture('linear-response.json');
+  data.data.notifications.nodes[0].issue.state = { type: 'completed' };
+  const refs = parse.parseLinear(data).filter((i) => i.kind === 'mention').map((i) => i.ref);
+  assert.deepEqual(refs, ['EX-21']);
+});
+
+test('linear (API key): a Backlog or Todo ticket I created myself is left out', () => {
+  const data = fixture('linear-response.json');
+  data.data.viewer.id = 'user-1';
+  data.data.viewer.assignedIssues.nodes.find((n) => n.identifier === 'EX-15').creator = { id: 'user-1', name: 'Me Example' };
+  const refs = parse.parseLinear(data).filter((i) => i.kind === 'assigned').map((i) => i.ref);
+  assert.deepEqual(refs, ['EX-16']);
+});
