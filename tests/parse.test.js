@@ -97,9 +97,9 @@ test('apiUrlToHtml handles pulls, issues and unknown shapes', () => {
   assert.equal(parse.apiUrlToHtml(undefined), 'https://github.com/notifications');
 });
 
-test('linear: assigned issues keep started and review states only', () => {
+test('linear: assigned issues keep Backlog and Todo only, not in progress, in review or done', () => {
   const items = parse.parseLinear(fixture('linear-response.json')).filter((i) => i.kind === 'assigned');
-  assert.deepEqual(items.map((i) => i.ref), ['EX-12', 'EX-13']);
+  assert.deepEqual(items.map((i) => i.ref), ['EX-15', 'EX-16']);
   assert.equal(items[0].who, 'Jo Example');
   assert.equal(items[1].who, 'unknown', 'a missing creator must not crash');
 });

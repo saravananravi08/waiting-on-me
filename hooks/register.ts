@@ -99,14 +99,20 @@ async function fetchLinear($: any, dir: string, patient: boolean) {
     record.error = 'no Linear MCP server is connected to this session'
   } else {
     record.server = server
-    const [issues, notes] = await Promise.allSettled([
-      $.mcp.call(server, 'list_issues', { assignee: 'me', state: 'started', limit: 100, fields: ['title', 'url', 'updatedAt', 'status', 'statusType', 'createdBy'] }),
+    // Tickets assigned to this person that they have not picked up yet: Backlog and Todo.
+    const fields = ['title', 'url', 'updatedAt', 'status', 'statusType', 'createdBy']
+    const settled = await Promise.allSettled([
       $.mcp.call(server, 'get_notifications', { unreadOnly: true, limit: 50 }),
+      $.mcp.call(server, 'list_issues', { assignee: 'me', state: 'backlog', limit: 100, fields }),
+      $.mcp.call(server, 'list_issues', { assignee: 'me', state: 'unstarted', limit: 100, fields }),
     ])
-    for (const [key, r] of [['issues', issues], ['notifications', notes]] as const) {
-      if (r.status === 'fulfilled' && !r.value.isError) record[key] = { text: textOf(r.value) }
-      else record[key] = { error: r.status === 'fulfilled' ? textOf(r.value).slice(0, 200) : errorText(r.reason) }
-    }
+    const parts = settled.map(r =>
+      r.status === 'fulfilled' && !r.value.isError
+        ? { text: textOf(r.value) }
+        : { error: r.status === 'fulfilled' ? textOf(r.value).slice(0, 200) : errorText(r.reason) },
+    )
+    record.notifications = parts[0]
+    record.issueLists = parts.slice(1)
   }
   await $.fs.write(`${dir}/${LINEAR_FILE}`, JSON.stringify(record))
 }

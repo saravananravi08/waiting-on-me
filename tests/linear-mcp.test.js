@@ -17,12 +17,19 @@ const record = (over = {}) => ({
   ...over,
 });
 
-test('issues: started and review states are kept, others dropped, missing creator is unknown', () => {
+test('issues: only Backlog and Todo are kept; in build, in review and done are dropped', () => {
   const items = parse.parseLinearMcp(record()).filter((i) => i.kind === 'assigned');
-  assert.deepEqual(items.map((i) => i.ref), ['EX-30', 'EX-31']);
+  assert.deepEqual(items.map((i) => i.ref), ['EX-33', 'EX-34']);
   assert.equal(items[0].who, 'Jo Example');
   assert.equal(items[1].who, 'unknown');
-  assert.equal(items[0].since, '2026-11-17T11:39:33.989Z');
+  assert.equal(items[0].since, '2026-11-17T10:00:00.000Z');
+});
+
+test('issues: the two lists the session stores are read together, and one failing is an error', () => {
+  const text = read('linear-mcp-issues.json');
+  const both = parse.parseLinearMcp({ notifications: { text: '{"notifications":[]}' }, issueLists: [{ text }, { text: '{"issues":[]}' }] });
+  assert.deepEqual(both.map((i) => i.ref), ['EX-33', 'EX-34']);
+  assert.throws(() => parse.parseLinearMcp({ issueLists: [{ text }, { error: 'tool failed' }] }), /list_issues: tool failed/);
 });
 
 test('notifications: unread mentions only, the sender is read from the subtitle', () => {

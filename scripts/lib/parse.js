@@ -153,6 +153,10 @@ function parseNotifications(list, authors = {}, me = '') {
   return items;
 }
 
+// A ticket waits on me while I have not picked it up: Backlog or Todo. Once it is in
+// progress, in build or in review, it is either under way or waiting on someone else.
+const NOT_STARTED = ['backlog', 'unstarted'];
+
 const LINEAR_NOTIFICATION_KINDS = [
   [/mention/i, 'mention'],
 ];
@@ -168,9 +172,7 @@ function parseLinear(response) {
   for (const issue of issues) {
     if (!issue) continue;
     const state = issue.state || {};
-    const reviewState = /review/i.test(state.name || '');
-    if (state.type !== 'started' && !reviewState) continue;
-    if (state.type === 'completed' || state.type === 'canceled') continue;
+    if (!NOT_STARTED.includes(state.type)) continue;
     items.push({
       source: 'linear',
       kind: 'assigned',
@@ -257,15 +259,15 @@ function parseMcpJson(part, what) {
 }
 
 function parseLinearMcp(record) {
-  const issues = parseMcpJson(record.issues, 'list_issues');
+  const lists = (Array.isArray(record.issueLists) ? record.issueLists : [record.issues])
+    .map((part) => parseMcpJson(part, 'list_issues'))
+    .filter(Boolean);
   const notes = parseMcpJson(record.notifications, 'get_notifications');
   const items = [];
 
-  for (const issue of (issues && issues.issues) || []) {
+  for (const issue of lists.flatMap((l) => l.issues || [])) {
     if (!issue || !issue.url) continue;
-    const reviewState = /review/i.test(issue.status || '');
-    if (issue.statusType !== 'started' && !reviewState) continue;
-    if (issue.statusType === 'completed' || issue.statusType === 'canceled') continue;
+    if (!NOT_STARTED.includes(issue.statusType)) continue;
     items.push({
       source: 'linear',
       kind: 'assigned',

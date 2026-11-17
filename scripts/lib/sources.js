@@ -128,7 +128,7 @@ async function fetchGithub() {
 const LINEAR_QUERY = `query {
   viewer {
     id name
-    assignedIssues(first: 100, orderBy: updatedAt, filter: { state: { type: { in: ["started"] } } }) {
+    assignedIssues(first: 100, orderBy: updatedAt, filter: { state: { type: { in: ["backlog", "unstarted"] } } }) {
       nodes { identifier title url updatedAt creator { name } state { name type } }
     }
   }

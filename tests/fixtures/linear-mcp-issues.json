@@ -1,6 +1,50 @@
-{"issues":[
- {"id":"EX-30","title":"Fix the importer","url":"https://linear.app/example/issue/EX-30/fix-the-importer","updatedAt":"2026-11-17T11:39:33.989Z","status":"In Build","statusType":"started","createdBy":"Jo Example"},
- {"id":"EX-31","title":"Review the copy","url":"https://linear.app/example/issue/EX-31/review-the-copy","updatedAt":"2026-11-17T10:49:04.428Z","status":"In Review","statusType":"started","createdBy":null},
- {"id":"EX-32","title":"Done","url":"https://linear.app/example/issue/EX-32/done","updatedAt":"2026-11-17T10:00:00.000Z","status":"Done","statusType":"completed","createdBy":"Jo Example"},
- {"id":"EX-33","title":"Backlog","url":"https://linear.app/example/issue/EX-33/backlog","updatedAt":"2026-11-17T10:00:00.000Z","status":"Backlog","statusType":"backlog","createdBy":"Jo Example"}
-],"hasNextPage":false}
+{
+ "issues": [
+  {
+   "id": "EX-30",
+   "title": "Fix the importer",
+   "url": "https://linear.app/example/issue/EX-30/fix-the-importer",
+   "updatedAt": "2026-11-17T11:39:33.989Z",
+   "status": "In Build",
+   "statusType": "started",
+   "createdBy": "Jo Example"
+  },
+  {
+   "id": "EX-31",
+   "title": "Review the copy",
+   "url": "https://linear.app/example/issue/EX-31/review-the-copy",
+   "updatedAt": "2026-11-17T10:49:04.428Z",
+   "status": "In Review",
+   "statusType": "started",
+   "createdBy": null
+  },
+  {
+   "id": "EX-32",
+   "title": "Done",
+   "url": "https://linear.app/example/issue/EX-32/done",
+   "updatedAt": "2026-11-17T10:00:00.000Z",
+   "status": "Done",
+   "statusType": "completed",
+   "createdBy": "Jo Example"
+  },
+  {
+   "id": "EX-33",
+   "title": "Backlog",
+   "url": "https://linear.app/example/issue/EX-33/backlog",
+   "updatedAt": "2026-11-17T10:00:00.000Z",
+   "status": "Backlog",
+   "statusType": "backlog",
+   "createdBy": "Jo Example"
+  },
+  {
+   "id": "EX-34",
+   "title": "Todo item",
+   "url": "https://linear.app/example/issue/EX-34/todo-item",
+   "updatedAt": "2026-11-17T09:00:00.000Z",
+   "status": "Todo",
+   "statusType": "unstarted",
+   "createdBy": null
+  }
+ ],
+ "hasNextPage": false
+}
