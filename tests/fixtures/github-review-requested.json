@@ -1,0 +1,29 @@
+[
+  {
+    "number": 41,
+    "title": "Add retry to the export job",
+    "url": "https://github.com/example-org/widgets/pull/41",
+    "author": { "login": "alex-example", "is_bot": false },
+    "createdAt": "2026-11-10T01:00:00Z",
+    "updatedAt": "2026-11-16T22:30:00Z",
+    "repository": { "name": "widgets", "nameWithOwner": "example-org/widgets" }
+  },
+  {
+    "number": 7,
+    "title": "Bump the linter",
+    "url": "https://github.com/example-org/tools/pull/7",
+    "author": { "login": "dependabot-example", "is_bot": true },
+    "createdAt": "2026-11-12T03:00:00Z",
+    "updatedAt": "2026-11-12T03:00:00Z",
+    "repository": { "name": "tools", "nameWithOwner": "example-org/tools" }
+  },
+  {
+    "number": 9,
+    "title": "Ghost author",
+    "url": "https://github.com/example-org/tools/pull/9",
+    "author": null,
+    "createdAt": "2026-11-13T03:00:00Z",
+    "updatedAt": "2026-11-13T04:00:00Z",
+    "repository": { "name": "tools", "nameWithOwner": "example-org/tools" }
+  }
+]

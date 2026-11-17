@@ -4,7 +4,7 @@
   "private": true,
   "description": "Claude Code plugin: who is waiting on you, from GitHub and Linear.",
   "scripts": {
-    "test": "node --test tests/"
+    "test": "node --test "tests/*.test.js""
   },
   "engines": { "node": ">=18" }
 }

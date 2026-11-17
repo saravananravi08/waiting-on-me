@@ -1,0 +1,57 @@
+[
+  {
+    "id": "1001",
+    "unread": true,
+    "reason": "mention",
+    "updated_at": "2026-11-16T05:00:00Z",
+    "subject": {
+      "title": "Flaky export test",
+      "url": "https://api.github.com/repos/example-org/widgets/issues/55",
+      "latest_comment_url": "https://api.github.com/repos/example-org/widgets/issues/comments/9001",
+      "type": "Issue"
+    },
+    "repository": { "full_name": "example-org/widgets" }
+  },
+  {
+    "id": "1002",
+    "unread": true,
+    "reason": "review_requested",
+    "updated_at": "2026-11-16T22:30:00Z",
+    "subject": {
+      "title": "Add retry to the export job",
+      "url": "https://api.github.com/repos/example-org/widgets/pulls/41",
+      "latest_comment_url": null,
+      "type": "PullRequest"
+    },
+    "repository": { "full_name": "example-org/widgets" }
+  },
+  {
+    "id": "1003",
+    "unread": true,
+    "reason": "team_mention",
+    "updated_at": "2026-11-15T05:00:00Z",
+    "subject": {
+      "title": "Release checklist",
+      "url": "https://api.github.com/repos/example-org/tools/commits/abc123",
+      "latest_comment_url": null,
+      "type": "Commit"
+    },
+    "repository": { "full_name": "example-org/tools" }
+  },
+  {
+    "id": "1004",
+    "unread": true,
+    "reason": "subscribed",
+    "updated_at": "2026-11-15T06:00:00Z",
+    "subject": { "title": "Noise", "url": "https://api.github.com/repos/example-org/tools/issues/1", "type": "Issue" },
+    "repository": { "full_name": "example-org/tools" }
+  },
+  {
+    "id": "1005",
+    "unread": true,
+    "reason": "mention",
+    "updated_at": "2026-11-15T07:00:00Z",
+    "subject": { "title": "Discussion thread", "url": null, "type": "Discussion" },
+    "repository": { "full_name": "example-org/tools" }
+  }
+]
