@@ -40,12 +40,18 @@ Start a new session. You should see a `waiting-on-me:` line, and `/waiting` shou
 
 To try it without installing: `claude --plugin-dir /path/to/waiting-on-me`.
 
-## Configure Linear
+## Linear
 
-Without a key the plugin says "Linear is not configured" and carries on with GitHub.
+There is nothing to configure if Claude Code is already connected to Linear (the Linear connector on claude.ai, or a Linear MCP server). A small module inside the session (`hooks/register.ts`) finds that connection and calls its tools with Claude's own sign-in, then writes the raw replies to `~/.cache/waiting-on-me/linear-mcp.json`. It checks every minute and fetches again once your refresh interval has passed, and sessions share the file, so several open sessions do not each fetch. No API key is read, no model tokens are used, and Linear is read-only.
 
-1. In Linear, open Settings, Security and access, Personal API keys, and create a key.
-2. Give it to the plugin in one of two ways. Either set `LINEAR_API_KEY` in your environment, or put it in a file only you can read:
+A hook script cannot call MCP tools, which is why this lives in the session. Two consequences:
+
+- Linear data is only refreshed while a Claude Code session is open (the refresher only runs then anyway).
+- The summary shown at the very start of a session is built before Claude's Linear connection is ready, so it can say Linear has no recent data. The dashboard, the count and `/waiting` pick the Linear data up within a few seconds to a minute.
+
+If no Linear connection is found, the plugin says so and carries on with GitHub.
+
+Optional fallback, for sessions with no Linear connection: an API key. Set `LINEAR_API_KEY` in your environment, or put it in a file only you can read:
 
 ```
 mkdir -p ~/.config/waiting-on-me
@@ -56,9 +62,9 @@ unset k
 chmod 600 ~/.config/waiting-on-me/env
 ```
 
-The environment wins over the file. If the file is readable by other users, the plugin still works but warns you to run `chmod 600`. The key is only ever sent to `api.linear.app` as an Authorization header. It is never printed, logged, cached or written into the dashboard, and any error text is scrubbed before it is shown. The `env` path is also in this repository's `.gitignore`.
+Claude's connection is used first; the key is used only when that has no recent data. The environment wins over the file, and if the file is readable by other users the plugin still works but warns you to run `chmod 600`. The key is only ever sent to `api.linear.app` as an Authorization header. It is never printed, logged, cached or written into the dashboard, and error text is scrubbed before it is shown. The `env` path is also in this repository's `.gitignore`.
 
-What the Linear side reads: issues assigned to you whose state type is "started" (this includes states named like "In Review" in a normal workflow), and unread, unarchived mention notifications. If your team names a review state with a different type, it is not picked up.
+What the Linear side reads: issues assigned to you whose state type is "started" (this includes states named like "In Review" in a normal workflow), and unread, unarchived mention notifications (first 50). If your team names a review state with a different type, it is not picked up.
 
 ## Refresh interval
 
@@ -102,6 +108,7 @@ It only reads that file, so it is instant and makes no network calls. To combine
 | `~/.cache/waiting-on-me/index.html` | The dashboard |
 | `~/.cache/waiting-on-me/count.txt` | One line for the status line |
 | `~/.cache/waiting-on-me/refresher.pid`, `sessions/`, `collect.lock` | Coordination between sessions |
+| `~/.cache/waiting-on-me/linear-mcp.json` | Raw Linear replies stored by the session module |
 | `~/.config/waiting-on-me/env` | Optional Linear key, yours to create |
 
 Run the collector by hand with `scripts/collect` (`--json` for the full result, `--quiet` for none).
@@ -135,7 +142,7 @@ Remove the `statusLine` entry from `~/.claude/settings.json` if you added it.
 
 - Org-wide GitHub search relies on what `gh` can see with your login. SSO-protected organisations need your token authorised for SSO, or their items will be missing.
 - Mentions are limited to your 50 most recent unread GitHub notifications and 50 most recent Linear notifications. Who is asking is looked up for the first 20 GitHub mentions; if a lookup fails the name shows as "unknown".
-- Linear comments that mention you are found through your unread mention notifications. A mention you have already read in Linear is not listed.
+- Linear comments that mention you are found through your unread mention notifications. A mention you have already read in Linear is not listed. The sender is read from the notification text; if it cannot be, it shows as "unknown".
 - Times use your machine's time zone. Set `WAITING_ON_ME_TZ` (for example `Australia/Sydney`) to override.
 
 ## v2 (not built)

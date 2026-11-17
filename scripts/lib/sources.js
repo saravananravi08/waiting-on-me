@@ -3,6 +3,7 @@
 // (GraphQL, key from the environment or ~/.config/waiting-on-me/env).
 // Each fetcher resolves to { status, items, error?, warning?, parts? } and never throws.
 //   status: ok | partial | failed | not-configured
+const fs = require('fs');
 const { execFile } = require('child_process');
 const config = require('./config');
 const parse = require('./parse');
@@ -139,13 +140,46 @@ const LINEAR_QUERY = `query {
   }
 }`;
 
+// Linear through the MCP connection of a running Claude Code session. hooks/register.ts
+// stores the raw replies in linear-mcp.json; this reads them. Returns null when there is no
+// usable file (absent, unreadable or stale), otherwise { status: 'ok'|'failed', ... }.
+function readLinearMcp(env = process.env, now = Date.now()) {
+  const p = config.paths(env);
+  const file = require('path').join(p.cacheDir, 'linear-mcp.json');
+  let stat;
+  let record;
+  try {
+    stat = fs.statSync(file);
+    record = JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch {
+    return null;
+  }
+  const maxAgeMs = Math.max(10, config.intervalMinutes(env) * 3) * 60 * 1000;
+  if (now - Math.max(stat.mtimeMs, Date.parse(record.fetchedAt) || 0) > maxAgeMs) return null;
+  if (record.error) return { status: 'failed', items: [], error: `Linear through Claude: ${record.error}` };
+  try {
+    return { status: 'ok', items: parse.parseLinearMcp(record) };
+  } catch (err) {
+    return { status: 'failed', items: [], error: config.scrub(`Linear through Claude: ${err.message}`).slice(0, 300) };
+  }
+}
+
+// Claude's own Linear connection first (nothing to configure), then an API key if there is one.
 async function fetchLinear(env = process.env, fetchImpl = globalThis.fetch) {
+  const viaClaude = readLinearMcp(env);
+  if (viaClaude && viaClaude.status === 'ok') return viaClaude;
+  const viaKey = await fetchLinearApi(env, fetchImpl);
+  if (viaKey.status === 'not-configured' && viaClaude) return viaClaude;
+  return viaKey;
+}
+
+async function fetchLinearApi(env, fetchImpl) {
   const { key, warning } = config.loadLinearKey(env);
   if (!key) {
     return {
       status: 'not-configured',
       items: [],
-      error: 'Linear is not configured (set LINEAR_API_KEY or add it to ~/.config/waiting-on-me/env)',
+      error: "Linear is not configured (no recent data from Claude's Linear connection, which only reports while a session is open, and no LINEAR_API_KEY)",
       warning,
     };
   }
@@ -176,4 +210,4 @@ async function fetchLinear(env = process.env, fetchImpl = globalThis.fetch) {
   }
 }
 
-module.exports = { fetchGithub, fetchLinear, LINEAR_QUERY, MY_PRS_QUERY };
+module.exports = { fetchGithub, fetchLinear, readLinearMcp, LINEAR_QUERY, MY_PRS_QUERY };

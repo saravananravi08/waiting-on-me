@@ -228,3 +228,64 @@ module.exports = {
   dedupe,
   sortItems,
 };
+
+// ---- Linear through Claude's own MCP connection --------------------------------------
+// The session module (hooks/register.ts) stores the raw MCP replies; these read them.
+//   list_issues      -> { issues: [{ id, title, url, updatedAt, status, statusType, createdBy }] }
+//   get_notifications -> { notifications: [{ type, subtitle, url, createdAt, readAt, archivedAt, title }] }
+
+const SUBTITLE_VERB = /^(.+?) (?:mentioned|commented|replied|assigned|reviewed|approved|requested|reacted|left|added|asked)\b/i;
+
+function issueKeyFromUrl(url) {
+  const m = typeof url === 'string' ? url.match(/\/(?:issue|review)\/([A-Za-z][A-Za-z0-9]*-\d+)/) : null;
+  return m ? m[1].toUpperCase() : '';
+}
+
+function parseMcpJson(part, what) {
+  if (!part) return null;
+  if (part.error) throw new Error(`${what}: ${part.error}`);
+  try {
+    return JSON.parse(part.text);
+  } catch {
+    throw new Error(`${what} returned something that is not JSON`);
+  }
+}
+
+function parseLinearMcp(record) {
+  const issues = parseMcpJson(record.issues, 'list_issues');
+  const notes = parseMcpJson(record.notifications, 'get_notifications');
+  const items = [];
+
+  for (const issue of (issues && issues.issues) || []) {
+    if (!issue || !issue.url) continue;
+    const reviewState = /review/i.test(issue.status || '');
+    if (issue.statusType !== 'started' && !reviewState) continue;
+    if (issue.statusType === 'completed' || issue.statusType === 'canceled') continue;
+    items.push({
+      source: 'linear',
+      kind: 'assigned',
+      who: issue.createdBy || 'unknown',
+      title: issue.title,
+      ref: issue.id || issueKeyFromUrl(issue.url),
+      url: issue.url,
+      since: issue.updatedAt,
+    });
+  }
+
+  for (const n of (notes && notes.notifications) || []) {
+    if (!n || n.readAt || n.archivedAt || !/mention/i.test(n.type || '')) continue;
+    const who = typeof n.subtitle === 'string' ? (n.subtitle.match(SUBTITLE_VERB) || [])[1] : '';
+    items.push({
+      source: 'linear',
+      kind: 'mention',
+      who: who || 'unknown',
+      title: n.title,
+      ref: issueKeyFromUrl(n.url),
+      url: n.url,
+      since: n.createdAt,
+    });
+  }
+  return items;
+}
+
+module.exports.parseLinearMcp = parseLinearMcp;

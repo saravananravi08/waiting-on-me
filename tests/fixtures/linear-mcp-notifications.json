@@ -1,0 +1,8 @@
+{"notifications":[
+ {"id":"a","type":"issueCommentMention","title":"Plan the launch","subtitle":"Jo Example mentioned you in a comment: please look","url":"https://linear.app/example/issue/EX-40/plan-the-launch#comment-1","createdAt":"2026-11-17T11:00:00.000Z","readAt":null,"archivedAt":null},
+ {"id":"b","type":"issueMention","title":"Another","subtitle":"jo@example.com mentioned you","url":"https://linear.app/example/issue/EX-41/another","createdAt":"2026-11-17T10:00:00.000Z","readAt":null,"archivedAt":null},
+ {"id":"c","type":"issueMention","title":"Read already","subtitle":"Jo Example mentioned you","url":"https://linear.app/example/issue/EX-42/read","createdAt":"2026-11-17T09:00:00.000Z","readAt":"2026-11-17T09:30:00.000Z","archivedAt":null},
+ {"id":"d","type":"issueNewComment","title":"Plain comment","subtitle":"Jo Example commented: hello","url":"https://linear.app/example/issue/EX-43/plain","createdAt":"2026-11-17T09:00:00.000Z","readAt":null,"archivedAt":null},
+ {"id":"e","type":"pullRequestMention","title":"PR thing","subtitle":"Sam Example mentioned you","url":"https://linear.app/example/review/ex-44-pr-thing-abc123#comment-9","createdAt":"2026-11-17T08:00:00.000Z","readAt":null,"archivedAt":null},
+ {"id":"f","type":"issueMention","title":"Odd","subtitle":"something unexpected","url":"https://linear.app/example/project/x","createdAt":"2026-11-17T07:00:00.000Z","readAt":null,"archivedAt":null}
+]}
