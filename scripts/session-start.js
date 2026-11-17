@@ -45,7 +45,7 @@ function main() {
   if (!latest) return;
 
   const stale = collect.ageMs(latest) > config.intervalMinutes() * 2 * 60 * 1000;
-  const context = render.summary(latest, { dashboardPath: p.html }) + (stale ? '\nNote: this data is older than expected; the refresh may have failed.' : '');
+  const context = render.summary(latest, { dashboardPath: config.dashboardUrl() ? `${config.dashboardUrl()} (file: ${p.html})` : p.html }) + (stale ? '\nNote: this data is older than expected; the refresh may have failed.' : '');
   process.stdout.write(
     `${JSON.stringify({
       systemMessage: render.banner(latest),

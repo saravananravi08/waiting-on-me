@@ -26,6 +26,15 @@ async function main() {
     proc.releasePid(p);
     process.exit(0);
   };
+  // Serve the dashboard on this machine only. If the port is taken, carry on without it.
+  const port = config.dashboardPort();
+  if (port) {
+    try {
+      await require(path.join(__dirname, 'lib', 'server.js')).start({ port, file: p.html });
+    } catch (err) {
+      log(`dashboard server not started on port ${port}: ${err && err.code ? err.code : err}`);
+    }
+  }
   process.on('SIGTERM', stop);
   process.on('SIGINT', stop);
 

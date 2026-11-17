@@ -16,7 +16,7 @@ async function main() {
     console.log('Nothing could be fetched and there is no earlier result. Run: node scripts/collect --json for details.');
     return;
   }
-  console.log(render.table(result, { dashboardPath: p.html }));
+  console.log(render.table(result, { dashboardPath: config.dashboardUrl() ? `${config.dashboardUrl()} (file: ${p.html})` : p.html }));
 }
 
 main().catch((err) => {

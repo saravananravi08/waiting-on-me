@@ -2,13 +2,13 @@
 
 A Claude Code plugin that tells you who is waiting on you. When a session starts, you see a short summary drawn from GitHub, Linear and a shared Slack nudge channel, Claude knows what is waiting on you, and the data keeps itself fresh while any session is open.
 
-Everything is read-only and uses your own logins. No server, no stored tokens, no dependencies beyond Node 18 or later (already there if you run Claude Code) and the `gh` CLI.
+Everything is read-only and uses your own logins. No hosted service, no stored tokens, no dependencies beyond Node 18 or later (already there if you run Claude Code) and the `gh` CLI.
 
 ## What you get
 
 - A summary at session start: a count per kind and the top five items, also given to Claude as context.
 - `/waiting`: refreshes now and prints the full table.
-- A dashboard at `~/.cache/waiting-on-me/index.html`, regenerated on every refresh. Open it in any browser. It shows a chart of how long each item has waited, lets you filter by kind, person and source, search, and change the order, and opens every link in a new tab. It reloads itself at the refresh interval and keeps your filters, follows your light or dark setting, and works on a phone or a desktop.
+- A dashboard at `http://127.0.0.1:8787/` while any Claude Code session is open, regenerated on every refresh. The same page is also written to `~/.cache/waiting-on-me/index.html`, which opens straight from disk. It shows a chart of how long each item has waited, lets you filter by kind, person and source, search, and change the order, and opens every link in a new tab. It reloads itself at the refresh interval and keeps your filters, follows your light or dark setting, and works on a phone or a desktop.
 - An optional status line snippet showing the count.
 
 Each item has a source, who is asking, what it is, a link, since when (DD/MM/YYYY HH:mm, 24-hour, your local time zone) and a kind.
@@ -80,6 +80,14 @@ How refreshing works:
 - When the session module brings in new Linear or Slack data it reuses the GitHub result the refresher already fetched, so GitHub is asked once per interval.
 - The refresher uses the interval from the environment of the session that started it.
 - It never fetches more often than every 30 seconds, even after errors. Errors go to `~/.cache/waiting-on-me/refresher.log`.
+
+## Dashboard address
+
+The shared refresher also serves the dashboard at `http://127.0.0.1:8787/`. It starts with your first session and stops when the last one ends.
+
+- It listens on `127.0.0.1` only, so it is reachable from your own machine and nowhere else. Another person cannot open your address; their plugin serves their own dashboard on their own machine.
+- Only the page is served. The data files next to it are not reachable.
+- Change the port with `WAITING_ON_ME_PORT` (1024 to 65535), or set it to `off` to have no server. If the port is already in use the plugin carries on without the server and notes it in `refresher.log`.
 
 ## Partial failure
 

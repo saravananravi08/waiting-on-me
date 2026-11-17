@@ -34,6 +34,22 @@ function intervalMinutes(env = process.env) {
   return Math.min(MAX_INTERVAL_MINUTES, Math.max(MIN_INTERVAL_MINUTES, Math.round(n)));
 }
 
+// The dashboard is served on 127.0.0.1 at this port. WAITING_ON_ME_PORT changes it;
+// "off" or 0 turns the server off (the page is still written to disk).
+const DEFAULT_PORT = 8787;
+function dashboardPort(env = process.env) {
+  const raw = env.WAITING_ON_ME_PORT;
+  if (raw === undefined || String(raw).trim() === '') return DEFAULT_PORT;
+  if (/^(off|0|false|no)$/i.test(String(raw).trim())) return null;
+  const n = Number(raw);
+  return Number.isInteger(n) && n >= 1024 && n <= 65535 ? n : DEFAULT_PORT;
+}
+
+function dashboardUrl(env = process.env) {
+  const port = dashboardPort(env);
+  return port ? `http://127.0.0.1:${port}/` : null;
+}
+
 // Parses KEY=value lines. Accepts "export KEY=value" and single or double quotes.
 function parseEnvFile(text) {
   const out = {};
@@ -91,6 +107,8 @@ module.exports = {
   DEFAULT_INTERVAL_MINUTES,
   paths,
   intervalMinutes,
+  dashboardPort,
+  dashboardUrl,
   parseEnvFile,
   loadLinearKey,
   scrub,
