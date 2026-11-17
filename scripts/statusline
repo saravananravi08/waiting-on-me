@@ -1,0 +1,6 @@
+#!/bin/sh
+# Prints the waiting count for a Claude Code status line, from the file each refresh writes.
+# Prints nothing if there is no data yet. No network, no node: safe to call on every redraw.
+f="${WAITING_ON_ME_HOME:-$HOME/.cache/waiting-on-me}/count.txt"
+[ -r "$f" ] && head -n 1 "$f"
+exit 0
