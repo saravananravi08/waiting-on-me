@@ -60,20 +60,33 @@ function readPid(p = config.paths()) {
   }
 }
 
-// True only if pid is alive and is really our refresher (guards against pid reuse).
-function isRefresher(pid) {
-  if (!pid) return false;
+// The command line of a live process, or '' if it is gone.
+function processArgs(pid) {
+  if (!pid) return '';
   try {
     process.kill(pid, 0);
   } catch (err) {
-    if (err.code !== 'EPERM') return false;
+    if (err.code !== 'EPERM') return '';
   }
   try {
-    const args = execFileSync('ps', ['-p', String(pid), '-o', 'args='], { encoding: 'utf8', timeout: 3000 });
-    return args.includes('refresher.js');
+    return execFileSync('ps', ['-p', String(pid), '-o', 'args='], { encoding: 'utf8', timeout: 3000 });
   } catch {
-    return false;
+    return '';
   }
+}
+
+// True only if pid is alive and is really a refresher (guards against pid reuse).
+function isRefresher(pid) {
+  return processArgs(pid).includes('refresher.js');
+}
+
+// True if the running refresher is this copy of the plugin, not an older installed version.
+function isThisVersion(pid) {
+  return processArgs(pid).includes(REFRESHER_SCRIPT);
+}
+
+function sleepSync(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
 // Called by the refresher itself on start. True if it now owns the pid file.
@@ -116,7 +129,20 @@ function releasePid(p = config.paths()) {
 // Starts the refresher unless one is already running. Returns 'running' or 'started'.
 function ensureRefresher(env = process.env) {
   const p = config.paths(env);
-  if (isRefresher(readPid(p))) return 'running';
+  const pid = readPid(p);
+  let outcome = 'started';
+  if (isRefresher(pid)) {
+    if (isThisVersion(pid)) return 'running';
+    // A refresher from an older version of the plugin is still going, and would keep
+    // rebuilding the data with old rules. Stop it and start this version.
+    try {
+      process.kill(pid, 'SIGTERM');
+    } catch {
+      // already gone
+    }
+    for (let i = 0; i < 20 && processArgs(pid); i++) sleepSync(100);
+    outcome = 'replaced';
+  }
   fs.mkdirSync(p.cacheDir, { recursive: true, mode: 0o700 });
   let out = 'ignore';
   try {
@@ -130,7 +156,7 @@ function ensureRefresher(env = process.env) {
     env,
   });
   child.unref();
-  return 'started';
+  return outcome;
 }
 
 // Stops the refresher if it is running. Returns true if a signal was sent.
@@ -159,6 +185,7 @@ module.exports = {
   liveSessions,
   readPid,
   isRefresher,
+  isThisVersion,
   claimPid,
   ownsPid,
   releasePid,

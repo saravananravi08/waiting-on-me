@@ -60,7 +60,8 @@ async function main() {
   proc.releasePid(p);
 }
 
-main().catch((err) => {
+// The dashboard server keeps the process alive, so leaving the loop must end it explicitly.
+main().then(() => process.exit(0)).catch((err) => {
   log(`refresher crashed: ${err && err.message ? err.message : err}`);
   proc.releasePid();
   process.exit(1);
