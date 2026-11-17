@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 'use strict';
 // Gathers GitHub and Linear into ~/.cache/waiting-on-me/latest.json (plus index.html and count.txt).
-// Usage: collect [--quiet] [--json]
+// Usage: collect [--quiet] [--json] [--merge]
 //   --quiet  print nothing on success
 //   --json   print the result as JSON (never contains credentials)
+//   --merge  reuse a recent GitHub result and only fold in new Linear and Slack data
 const path = require('path');
 const { refresh } = require(path.join(__dirname, 'lib', 'collect.js'));
 const config = require(path.join(__dirname, 'lib', 'config.js'));
@@ -11,7 +12,7 @@ const render = require(path.join(__dirname, 'lib', 'render.js'));
 
 const args = new Set(process.argv.slice(2));
 
-refresh({ waitIfBusy: true })
+refresh({ waitIfBusy: true, merge: args.has('--merge') })
   .then(({ result, skipped }) => {
     if (!result) {
       console.error('waiting-on-me: another fetch was running and nothing was written');

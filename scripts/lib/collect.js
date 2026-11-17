@@ -63,9 +63,12 @@ async function waitForRelease(p, maxMs) {
   while (Date.now() < end && fs.existsSync(p.lockFile)) await sleep(250);
 }
 
-// Fetches both sources and writes the outputs. Resolves { result, skipped }.
+// Fetches the sources and writes the outputs. Resolves { result, skipped }.
 // If another process is already fetching, waits for it (waitIfBusy) and returns its result.
-async function refresh({ waitIfBusy = true, env = process.env } = {}) {
+// merge: fold in new Linear and Slack data but reuse the GitHub result already on disk if it
+// is younger than the interval, keeping its fetched-at time, so GitHub is not asked twice
+// and the refresher's schedule is unchanged.
+async function refresh({ waitIfBusy = true, merge = false, env = process.env } = {}) {
   const p = config.paths(env);
   fs.mkdirSync(p.cacheDir, { recursive: true, mode: 0o700 });
   if (!acquireLock(p)) {
@@ -73,13 +76,25 @@ async function refresh({ waitIfBusy = true, env = process.env } = {}) {
     return { result: readLatest(p), skipped: true };
   }
   try {
-    const [github, linear] = await Promise.all([sources.fetchGithub(), sources.fetchLinear(env)]);
-    const items = parse.sortItems(parse.dedupe([...github.items, ...linear.items]));
+    const previous = merge ? readLatest(p) : null;
+    const reuse =
+      previous &&
+      previous.sources.github &&
+      previous.sources.github.status === 'ok' &&
+      ageMs(previous) < config.intervalMinutes(env) * 60 * 1000;
+    const [github, linear] = await Promise.all([
+      reuse
+        ? { ...previous.sources.github, items: previous.items.filter((i) => i.source === 'github') }
+        : sources.fetchGithub(),
+      sources.fetchLinear(env),
+    ]);
+    const slack = sources.readSlackMcp(env);
+    const items = parse.sortItems(parse.dedupe([...github.items, ...linear.items, ...(slack ? slack.items : [])]));
     const strip = ({ status, error, warning, parts }) => ({ status, ...(error ? { error } : {}), ...(warning ? { warning } : {}), ...(parts ? { parts } : {}) });
     const result = {
-      fetchedAt: new Date().toISOString(),
+      fetchedAt: reuse ? previous.fetchedAt : new Date().toISOString(),
       intervalMinutes: config.intervalMinutes(env),
-      sources: { github: strip(github), linear: strip(linear) },
+      sources: { github: strip(github), linear: strip(linear), ...(slack ? { slack: strip(slack) } : {}) },
       items,
     };
     writeAtomic(p.latest, `${JSON.stringify(result, null, 2)}\n`);

@@ -140,12 +140,13 @@ const LINEAR_QUERY = `query {
   }
 }`;
 
-// Linear through the MCP connection of a running Claude Code session. hooks/register.ts
-// stores the raw replies in linear-mcp.json; this reads them. Returns null when there is no
-// usable file (absent, unreadable or stale), otherwise { status: 'ok'|'failed', ... }.
-function readLinearMcp(env = process.env, now = Date.now()) {
+// Data fetched inside a running Claude Code session through its MCP connections.
+// hooks/register.ts stores the raw replies; these read them. Returns null when there is no
+// usable file (absent, unreadable, stale, or the feature is off), otherwise
+// { status: 'ok'|'failed', items, error? }.
+function readMcpFile(name, label, parser, env = process.env, now = Date.now()) {
   const p = config.paths(env);
-  const file = require('path').join(p.cacheDir, 'linear-mcp.json');
+  const file = require('path').join(p.cacheDir, name);
   let stat;
   let record;
   try {
@@ -156,13 +157,19 @@ function readLinearMcp(env = process.env, now = Date.now()) {
   }
   const maxAgeMs = Math.max(10, config.intervalMinutes(env) * 3) * 60 * 1000;
   if (now - Math.max(stat.mtimeMs, Date.parse(record.fetchedAt) || 0) > maxAgeMs) return null;
-  if (record.error) return { status: 'failed', items: [], error: `Linear through Claude: ${record.error}` };
+  if (record.off) return null;
+  if (record.error) return { status: 'failed', items: [], error: `${label}: ${record.error}` };
   try {
-    return { status: 'ok', items: parse.parseLinearMcp(record) };
+    return { status: 'ok', items: parser(record) };
   } catch (err) {
-    return { status: 'failed', items: [], error: config.scrub(`Linear through Claude: ${err.message}`).slice(0, 300) };
+    return { status: 'failed', items: [], error: config.scrub(`${label}: ${err.message}`).slice(0, 300) };
   }
 }
+
+const readLinearMcp = (env, now) => readMcpFile('linear-mcp.json', 'Linear through Claude', parse.parseLinearMcp, env, now);
+
+// Slack nudges are optional: null means the source is simply left out.
+const readSlackMcp = (env, now) => readMcpFile('slack-mcp.json', 'Slack through Claude', parse.parseSlackMcp, env, now);
 
 // Claude's own Linear connection first (nothing to configure), then an API key if there is one.
 async function fetchLinear(env = process.env, fetchImpl = globalThis.fetch) {
@@ -210,4 +217,4 @@ async function fetchLinearApi(env, fetchImpl) {
   }
 }
 
-module.exports = { fetchGithub, fetchLinear, readLinearMcp, LINEAR_QUERY, MY_PRS_QUERY };
+module.exports = { fetchGithub, fetchLinear, readLinearMcp, readSlackMcp, LINEAR_QUERY, MY_PRS_QUERY };

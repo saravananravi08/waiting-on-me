@@ -1,0 +1,20 @@
+{
+ "fetchedAt": "2026-11-17T12:45:00.000Z",
+ "channelName": "waiting-on-me",
+ "me": "U0ME000001",
+ "channelId": "C0EXAMPLE01",
+ "channel": {
+  "text": "{\"messages\": \"Channel: #waiting-on-me (C0EXAMPLE01)\\n\\n=== Message from Jo Example <jo@example.com> (U0JO000001) at 2026-11-17 18:10:00 IST === \\nMessage TS: 1794919200.000100\\n<@U0ME000001|Me Example> waiting on you: please review the importer change. <https://github.com/example-org/widgets/pull/41|PR 41> [wom:v1]\\n\\n=== Message from Sam Example <sam@example.com> (U0SAM00001) at 2026-11-17 18:05:00 IST === \\nMessage TS: 1794918900.000200\\n<@U0ME000001> waiting on you: sign off the release notes.\\nsecond line of detail https://linear.app/example/issue/EX-50/release-notes [wom:v1]\\n\\n=== Message from Jo Example <jo@example.com> (U0JO000001) at 2026-11-17 18:00:00 IST === \\nMessage TS: 1794918600.000300\\n<@U0ME000001> waiting on you: already answered one. https://github.com/example-org/widgets/pull/40 [wom:v1]\\n\\n=== Message from Jo Example <jo@example.com> (U0JO000001) at 2026-11-17 17:55:00 IST === \\nMessage TS: 1794918300.000400\\n<@U0SAM00001> waiting on you: this one is for Sam. https://github.com/example-org/widgets/pull/39 [wom:v1]\\n\\n=== Message from Me Example <me@example.com> (U0ME000001) at 2026-11-17 17:50:00 IST === \\nMessage TS: 1794918000.000500\\n<@U0JO000001> waiting on you: my own nudge that mentions <@U0ME000001> too. https://github.com/example-org/widgets/pull/38 [wom:v1]\\n\\n=== Message from Jo Example <jo@example.com> (U0JO000001) at 2026-11-17 17:45:00 IST === \\nMessage TS: 1794917700.000600\\n<@U0ME000001> just chatting, no tag here\\n\\n=== Message from Notion AI <botuser-T000-B000@slack-bots.com> (U0BOT00001) at 2026-11-17 17:39:40 IST === \\nMessage TS: 1794917380.727619\\n<@U0BOT00001|Notion AI> has joined the channel\", \"pagination_info\": \"There are no more messages available.\\n\"}"
+ },
+ "threads": {
+  "1794918600.000300": {
+   "text": "{\"messages\": \"=== Message from Jo Example <jo@example.com> (U0JO000001) at 2026-11-17 18:00:00 IST === \\nMessage TS: 1794918600.000300\\n<@U0ME000001> waiting on you: already answered one. https://github.com/example-org/widgets/pull/40 [wom:v1]\\n\\n=== Message from Me Example <me@example.com> (U0ME000001) at 2026-11-17 18:02:00 IST === \\nMessage TS: 1794918720.000310\\ndone, approved [wom:v1]\"}"
+  },
+  "1794919200.000100": {
+   "text": "{\"messages\": \"=== Message from Jo Example <jo@example.com> (U0JO000001) at 2026-11-17 18:10:00 IST === \\nMessage TS: 1794919200.000100\\n<@U0ME000001|Me Example> waiting on you: please review the importer change. <https://github.com/example-org/widgets/pull/41|PR 41> [wom:v1]\\n\\n=== Message from Sam Example <sam@example.com> (U0SAM00001) at 2026-11-17 18:11:00 IST === \\nMessage TS: 1794919260.000110\\nI can take it if you are busy\"}"
+  },
+  "1794918900.000200": {
+   "error": "thread read failed"
+  }
+ }
+}

@@ -1,6 +1,6 @@
 # waiting-on-me
 
-A Claude Code plugin that tells you who is waiting on you. When a session starts, you see a short summary drawn from GitHub and Linear, Claude knows what is waiting on you, and the data keeps itself fresh while any session is open.
+A Claude Code plugin that tells you who is waiting on you. When a session starts, you see a short summary drawn from GitHub, Linear and a shared Slack nudge channel, Claude knows what is waiting on you, and the data keeps itself fresh while any session is open.
 
 Everything is read-only and uses your own logins. No server, no stored tokens, no dependencies beyond Node 18 or later (already there if you run Claude Code) and the `gh` CLI.
 
@@ -15,6 +15,7 @@ Each item has a source, who is asking, what it is, a link, since when (DD/MM/YYY
 
 | Kind | Source | Meaning |
 | --- | --- | --- |
+| nudge | Slack | A message for you in the shared nudge channel that you have not answered in its thread |
 | review requested | GitHub | Open PR where your review is requested, across every repo you can see |
 | changes requested | GitHub | Your open PR where a reviewer asked for changes |
 | review comment | GitHub | Your open PR with an unresolved review thread where someone else spoke last |
@@ -77,7 +78,8 @@ export WAITING_ON_ME_INTERVAL=10
 How refreshing works:
 
 - One background refresher runs per machine, shared by every Claude Code session. It is started by SessionStart (a pid file is created exclusively, so two sessions starting together never make two) and stopped by SessionEnd when no session is left.
-- If a session crashes without reporting its end, its marker expires after 24 hours, and the refresher stops itself once no markers are left.
+- Each open session rewrites its marker every minute, so a session of any length keeps the refresher alive. If a session crashes without reporting its end, its marker expires after 24 hours, and the refresher stops itself once no markers are left.
+- When the session module brings in new Linear or Slack data it reuses the GitHub result the refresher already fetched, so GitHub is asked once per interval.
 - The refresher uses the interval from the environment of the session that started it.
 - It never fetches more often than every 30 seconds, even after errors. Errors go to `~/.cache/waiting-on-me/refresher.log`.
 
@@ -108,7 +110,7 @@ It only reads that file, so it is instant and makes no network calls. To combine
 | `~/.cache/waiting-on-me/index.html` | The dashboard |
 | `~/.cache/waiting-on-me/count.txt` | One line for the status line |
 | `~/.cache/waiting-on-me/refresher.pid`, `sessions/`, `collect.lock` | Coordination between sessions |
-| `~/.cache/waiting-on-me/linear-mcp.json` | Raw Linear replies stored by the session module |
+| `~/.cache/waiting-on-me/linear-mcp.json`, `slack-mcp.json` | Raw Linear and Slack replies stored by the session module |
 | `~/.config/waiting-on-me/env` | Optional Linear key, yours to create |
 
 Run the collector by hand with `scripts/collect` (`--json` for the full result, `--quiet` for none).
@@ -158,8 +160,14 @@ It finds the person in Slack by email or name, drafts one line ending in the tag
 
 The command never creates the channel. Someone creates it once in Slack and people join it.
 
+### Nudges for you
+
+The same session module that reads Linear also reads this channel through Claude's Slack connection, once per refresh interval. A message counts as a nudge for you when it carries the `[wom:v1]` tag, mentions you, and was written by someone else. It stays in your list (kind "nudge", shown first) until you reply in its thread, in Slack or with `/nudge reply`. A reply from somebody else does not clear it. Up to the 100 newest channel messages are read, and the threads of up to 10 nudges.
+
+If Claude has no Slack connection, or you cannot see the channel, the nudge kind is simply left out. If reading the channel fails, Slack is named as failed and nudges show as unknown, not zero.
+
 ## Not built yet
 
-- Incoming nudges are not picked up automatically. Nothing polls the channel, so a nudge for you does not appear in the session summary, the dashboard or the count. You see it in Slack, or by running `/nudge reply`.
-- No automatic replies or "seen" receipts.
+- No automatic replies or "seen" receipts. Every message is written or approved by a person.
+- Nudges are read only while a Claude Code session is open, and on the refresh interval, so delivery is not instant.
 - Reaching someone who is not in the Slack workspace, or nudges that must stay private, would need direct messages or a shared service with its own sign-in. That is a separate decision.

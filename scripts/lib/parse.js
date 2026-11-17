@@ -2,15 +2,16 @@
 // Pure parsing: raw API output in, normalised items out. No network, no files.
 //
 // Item shape:
-//   { source: 'github'|'linear', kind, who, title, ref, url, since }
-// kind is one of: review requested, changes requested, review comment, mention, assigned.
+//   { source: 'github'|'linear'|'slack', kind, who, title, ref, url, since }
+// kind is one of: nudge, changes requested, review requested, review comment, mention, assigned.
 // since is an ISO 8601 string (formatted for people at render time).
 
-const KINDS = ['changes requested', 'review requested', 'review comment', 'mention', 'assigned'];
+const KINDS = ['nudge', 'changes requested', 'review requested', 'review comment', 'mention', 'assigned'];
 
 // Which sources can supply which kind. Used so a failed or unconfigured
 // source is never shown as a confident zero.
 const KIND_PROVIDERS = {
+  nudge: ['slack'],
   'changes requested': ['github'],
   'review requested': ['github'],
   'review comment': ['github'],
@@ -289,3 +290,68 @@ function parseLinearMcp(record) {
 }
 
 module.exports.parseLinearMcp = parseLinearMcp;
+
+// ---- Slack nudges through Claude's own MCP connection ---------------------------------
+// The session module stores the raw text of the channel and of each nudge's thread.
+// A message block looks like:
+//   === Message from NAME <email> (U123) at 2026-11-17 17:39:40 IST ===
+//   Message TS: 1794917380.727619
+//   the text, possibly over several lines
+const NUDGE_TAG = '[wom:v1]';
+
+function unwrap(text, key) {
+  try {
+    const v = JSON.parse(text)[key];
+    return typeof v === 'string' ? v : String(text);
+  } catch {
+    return String(text == null ? '' : text);
+  }
+}
+
+function parseSlackMessages(raw) {
+  const out = [];
+  for (const block of unwrap(raw, 'messages').split(/^=== Message from /m).slice(1)) {
+    const head = block.match(/^(.*?)(?: <([^>\n]*)>)? \((U[A-Z0-9]+)\) at [^\n]*?===[ \t]*\n/);
+    if (!head) continue;
+    const rest = block.slice(head[0].length);
+    const ts = (rest.match(/^Message TS: ([0-9]+\.[0-9]+)[ \t]*\n?/) || [])[1];
+    if (!ts) continue;
+    const text = rest.replace(/^Message TS: [^\n]*\n?/, '').trim();
+    out.push({ name: head[1].trim() || 'unknown', email: head[2] || '', userId: head[3], ts, text });
+  }
+  return out;
+}
+
+// Nudges addressed to me that I have not answered in the thread.
+function parseSlackMcp(record) {
+  if (!record || !record.me || !record.channelId || !record.channel) throw new Error('unexpected Slack data');
+  const me = record.me;
+  const items = [];
+  for (const msg of parseSlackMessages(record.channel.text)) {
+    if (msg.userId === me || !msg.text.includes(NUDGE_TAG) || !msg.text.includes(`<@${me}`)) continue;
+    const thread = record.threads && record.threads[msg.ts];
+    if (thread && thread.text) {
+      const replies = parseSlackMessages(thread.text).filter((m) => m.ts !== msg.ts);
+      if (replies.some((m) => m.userId === me)) continue; // answered
+    }
+    const title = msg.text
+      .split(NUDGE_TAG).join('')
+      .replace(/<@U[A-Z0-9]+(?:\|[^>]*)?>/g, '')
+      .replace(/<(https?:\/\/[^|>\s]+)(?:\|[^>]*)?>/g, '$1')
+      .replace(/^\s*waiting on you:\s*/i, '')
+      .trim();
+    items.push({
+      source: 'slack',
+      kind: 'nudge',
+      who: msg.name,
+      title: title || '(no text)',
+      ref: `#${record.channelName || 'waiting-on-me'}`,
+      url: `https://slack.com/app_redirect?channel=${record.channelId}&message_ts=${msg.ts}`,
+      since: new Date(Number(msg.ts) * 1000).toISOString(),
+    });
+  }
+  return items;
+}
+
+module.exports.parseSlackMessages = parseSlackMessages;
+module.exports.parseSlackMcp = parseSlackMcp;
