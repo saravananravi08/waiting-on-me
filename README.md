@@ -28,14 +28,12 @@ Each item has a source, who is asking, what it is, a link, since when (DD/MM/YYY
 
 You need the `gh` CLI signed in (`gh auth login`) and Claude Code.
 
-This plugin has no GitHub home yet. Until it does, install it from a local clone:
-
 ```
-claude plugin marketplace add /path/to/waiting-on-me
+claude plugin marketplace add saravananravi08/waiting-on-me
 claude plugin install waiting-on-me@waiting-on-me
 ```
 
-Inside a session the same thing is `/plugin marketplace add /path/to/waiting-on-me` then `/plugin install waiting-on-me@waiting-on-me`. Once the repository exists, the first command becomes `claude plugin marketplace add <owner>/<repo>`.
+Inside a session the same thing is `/plugin marketplace add saravananravi08/waiting-on-me` then `/plugin install waiting-on-me@waiting-on-me`. To install from a local clone, give the folder path in place of `saravananravi08/waiting-on-me`.
 
 Start a new session. You should see a `waiting-on-me:` line, and `/waiting` should print a table.
 
@@ -171,3 +169,7 @@ If Claude has no Slack connection, or you cannot see the channel, the nudge kind
 - No automatic replies or "seen" receipts. Every message is written or approved by a person.
 - Nudges are read only while a Claude Code session is open, and on the refresh interval, so delivery is not instant.
 - Reaching someone who is not in the Slack workspace, or nudges that must stay private, would need direct messages or a shared service with its own sign-in. That is a separate decision.
+
+## Licence
+
+MIT. See `LICENSE`.

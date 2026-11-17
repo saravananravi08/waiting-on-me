@@ -2,6 +2,8 @@
   "name": "waiting-on-me",
   "version": "0.1.0",
   "description": "Shows who is waiting on you, from GitHub and Linear, when Claude Code starts, and keeps itself fresh.",
-  "author": { "name": "Fabulate" },
-  "license": "UNLICENSED"
+  "author": {
+    "name": "saravananravi08"
+  },
+  "license": "MIT"
 }
