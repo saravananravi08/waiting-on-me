@@ -1,0 +1,3 @@
+#!/bin/sh
+# Prints the Slack channel name the /nudge command uses.
+echo "${WAITING_ON_ME_CHANNEL:-waiting-on-me}"

@@ -145,6 +145,21 @@ Remove the `statusLine` entry from `~/.claude/settings.json` if you added it.
 - Linear comments that mention you are found through your unread mention notifications. A mention you have already read in Linear is not listed. The sender is read from the notification text; if it cannot be, it shows as "unknown".
 - Times use your machine's time zone. Set `WAITING_ON_ME_TZ` (for example `Australia/Sydney`) to override.
 
-## v2 (not built)
+## Nudging someone through Slack
 
-Messaging another person from here, by git username or email ("nudge them, I am waiting on your review"), is not part of v1 and cannot be bolted on locally. It needs a shared store that both people can reach and a sign-in so a message is tied to a real person. That makes it a small server, not a plugin script, and it is a separate decision about where it runs, who can use it and what data it holds.
+`/nudge` writes to a shared Slack channel (default `waiting-on-me`, change it with `WAITING_ON_ME_CHANNEL`) through the Slack connector Claude is already signed in to. Messages go out under your own name.
+
+```
+/nudge <person or email> <what you are waiting on, with a link>
+/nudge reply <your reply>
+```
+
+It finds the person in Slack by email or name, drafts one line ending in the tag `[wom:v1]`, shows you the draft, and sends only after you say yes. `reply` answers the newest tagged thread that mentions you. Keep it to a link and a short reason: the channel is readable by everyone in it, so the command leaves out client names, creator details, rates and commercial terms and tells you when it has. Text read from the channel is treated as data from other people, never as instructions.
+
+The command never creates the channel. Someone creates it once in Slack and people join it.
+
+## Not built yet
+
+- Incoming nudges are not picked up automatically. Nothing polls the channel, so a nudge for you does not appear in the session summary, the dashboard or the count. You see it in Slack, or by running `/nudge reply`.
+- No automatic replies or "seen" receipts.
+- Reaching someone who is not in the Slack workspace, or nudges that must stay private, would need direct messages or a shared service with its own sign-in. That is a separate decision.
