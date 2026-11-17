@@ -42,6 +42,26 @@ function parseReviewRequested(prs) {
   }));
 }
 
+// GitHub's latestReviews can come back empty while the decision is CHANGES_REQUESTED, so
+// the review history is read as well. For each reviewer the latest review that is not a
+// plain comment decides; those still asking for changes are returned, newest first.
+function reviewersAskingForChanges(pr) {
+  const decisive = new Set(['CHANGES_REQUESTED', 'APPROVED', 'DISMISSED']);
+  const all = [
+    ...((pr.latestReviews && pr.latestReviews.nodes) || []),
+    ...((pr.reviews && pr.reviews.nodes) || []),
+  ].filter((r) => r && decisive.has(r.state));
+  const byAuthor = new Map();
+  for (const r of all) {
+    const key = (r.author && r.author.login) || 'unknown';
+    const prev = byAuthor.get(key);
+    if (!prev || Date.parse(r.submittedAt) > Date.parse(prev.submittedAt)) byAuthor.set(key, r);
+  }
+  return [...byAuthor.values()]
+    .filter((r) => r.state === 'CHANGES_REQUESTED')
+    .sort((a, b) => Date.parse(b.submittedAt) - Date.parse(a.submittedAt));
+}
+
 // GraphQL search of my open PRs. Emits "changes requested" when the review
 // decision says so, and "review comment" when someone else has the last word
 // in an unresolved review thread.
@@ -54,10 +74,8 @@ function parseMyPrs(response, myLogin) {
     const ref = `${(pr.repository && pr.repository.nameWithOwner) || 'unknown'}#${pr.number}`;
 
     if (pr.reviewDecision === 'CHANGES_REQUESTED') {
-      const reviews = ((pr.latestReviews && pr.latestReviews.nodes) || [])
-        .filter((r) => r && r.state === 'CHANGES_REQUESTED')
-        .sort((a, b) => Date.parse(b.submittedAt) - Date.parse(a.submittedAt));
-      const latest = reviews[0];
+      const asking = reviewersAskingForChanges(pr);
+      const latest = asking[0];
       items.push({
         source: 'github',
         kind: 'changes requested',

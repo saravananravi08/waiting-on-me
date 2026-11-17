@@ -48,6 +48,7 @@ const MY_PRS_QUERY = `query($q: String!) {
         repository { nameWithOwner }
         reviewDecision
         latestReviews(first: 10) { nodes { state submittedAt author { login } } }
+        reviews(last: 30, states: [CHANGES_REQUESTED, APPROVED, DISMISSED]) { nodes { state submittedAt author { login } } }
         reviewThreads(first: 50) {
           nodes { isResolved isOutdated comments(last: 1) { nodes { createdAt author { login } } } }
         }

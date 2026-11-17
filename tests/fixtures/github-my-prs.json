@@ -8,21 +8,93 @@
           "url": "https://github.com/example-org/widgets/pull/120",
           "updatedAt": "2026-11-16T10:00:00Z",
           "isDraft": false,
-          "repository": { "nameWithOwner": "example-org/widgets" },
+          "repository": {
+            "nameWithOwner": "example-org/widgets"
+          },
           "reviewDecision": "CHANGES_REQUESTED",
           "latestReviews": {
             "nodes": [
-              { "state": "APPROVED", "submittedAt": "2026-11-15T01:00:00Z", "author": { "login": "sam-example" } },
-              { "state": "CHANGES_REQUESTED", "submittedAt": "2026-11-15T23:00:00Z", "author": { "login": "alex-example" } },
-              { "state": "CHANGES_REQUESTED", "submittedAt": "2026-11-14T23:00:00Z", "author": { "login": "older-reviewer" } }
+              {
+                "state": "APPROVED",
+                "submittedAt": "2026-11-15T01:00:00Z",
+                "author": {
+                  "login": "sam-example"
+                }
+              },
+              {
+                "state": "CHANGES_REQUESTED",
+                "submittedAt": "2026-11-15T23:00:00Z",
+                "author": {
+                  "login": "alex-example"
+                }
+              },
+              {
+                "state": "CHANGES_REQUESTED",
+                "submittedAt": "2026-11-14T23:00:00Z",
+                "author": {
+                  "login": "older-reviewer"
+                }
+              }
             ]
           },
           "reviewThreads": {
             "nodes": [
-              { "isResolved": false, "isOutdated": false, "comments": { "nodes": [{ "createdAt": "2026-11-15T23:05:00Z", "author": { "login": "alex-example" } }] } },
-              { "isResolved": true, "isOutdated": false, "comments": { "nodes": [{ "createdAt": "2026-11-15T23:06:00Z", "author": { "login": "alex-example" } }] } },
-              { "isResolved": false, "isOutdated": true, "comments": { "nodes": [{ "createdAt": "2026-11-15T23:07:00Z", "author": { "login": "alex-example" } }] } },
-              { "isResolved": false, "isOutdated": false, "comments": { "nodes": [{ "createdAt": "2026-11-16T01:00:00Z", "author": { "login": "me-example" } }] } }
+              {
+                "isResolved": false,
+                "isOutdated": false,
+                "comments": {
+                  "nodes": [
+                    {
+                      "createdAt": "2026-11-15T23:05:00Z",
+                      "author": {
+                        "login": "alex-example"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "isResolved": true,
+                "isOutdated": false,
+                "comments": {
+                  "nodes": [
+                    {
+                      "createdAt": "2026-11-15T23:06:00Z",
+                      "author": {
+                        "login": "alex-example"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "isResolved": false,
+                "isOutdated": true,
+                "comments": {
+                  "nodes": [
+                    {
+                      "createdAt": "2026-11-15T23:07:00Z",
+                      "author": {
+                        "login": "alex-example"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "isResolved": false,
+                "isOutdated": false,
+                "comments": {
+                  "nodes": [
+                    {
+                      "createdAt": "2026-11-16T01:00:00Z",
+                      "author": {
+                        "login": "me-example"
+                      }
+                    }
+                  ]
+                }
+              }
             ]
           }
         },
@@ -32,14 +104,55 @@
           "url": "https://github.com/example-org/widgets/pull/121",
           "updatedAt": "2026-11-16T11:00:00Z",
           "isDraft": false,
-          "repository": { "nameWithOwner": "example-org/widgets" },
+          "repository": {
+            "nameWithOwner": "example-org/widgets"
+          },
           "reviewDecision": "REVIEW_REQUIRED",
-          "latestReviews": { "nodes": [] },
+          "latestReviews": {
+            "nodes": []
+          },
           "reviewThreads": {
             "nodes": [
-              { "isResolved": false, "isOutdated": false, "comments": { "nodes": [{ "createdAt": "2026-11-16T09:00:00Z", "author": { "login": "sam-example" } }] } },
-              { "isResolved": false, "isOutdated": false, "comments": { "nodes": [{ "createdAt": "2026-11-16T08:00:00Z", "author": { "login": "alex-example" } }] } },
-              { "isResolved": false, "isOutdated": false, "comments": { "nodes": [{ "createdAt": "2026-11-16T09:30:00Z", "author": null }] } }
+              {
+                "isResolved": false,
+                "isOutdated": false,
+                "comments": {
+                  "nodes": [
+                    {
+                      "createdAt": "2026-11-16T09:00:00Z",
+                      "author": {
+                        "login": "sam-example"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "isResolved": false,
+                "isOutdated": false,
+                "comments": {
+                  "nodes": [
+                    {
+                      "createdAt": "2026-11-16T08:00:00Z",
+                      "author": {
+                        "login": "alex-example"
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "isResolved": false,
+                "isOutdated": false,
+                "comments": {
+                  "nodes": [
+                    {
+                      "createdAt": "2026-11-16T09:30:00Z",
+                      "author": null
+                    }
+                  ]
+                }
+              }
             ]
           }
         },
@@ -49,10 +162,73 @@
           "url": "https://github.com/example-org/widgets/pull/122",
           "updatedAt": "2026-11-16T12:00:00Z",
           "isDraft": false,
-          "repository": { "nameWithOwner": "example-org/widgets" },
+          "repository": {
+            "nameWithOwner": "example-org/widgets"
+          },
           "reviewDecision": "APPROVED",
-          "latestReviews": { "nodes": [{ "state": "APPROVED", "submittedAt": "2026-11-16T11:30:00Z", "author": { "login": "sam-example" } }] },
-          "reviewThreads": { "nodes": [] }
+          "latestReviews": {
+            "nodes": [
+              {
+                "state": "APPROVED",
+                "submittedAt": "2026-11-16T11:30:00Z",
+                "author": {
+                  "login": "sam-example"
+                }
+              }
+            ]
+          },
+          "reviewThreads": {
+            "nodes": []
+          }
+        },
+        {
+          "number": 123,
+          "title": "Empty latest reviews",
+          "url": "https://github.com/example-org/widgets/pull/123",
+          "updatedAt": "2026-11-17T11:00:00Z",
+          "isDraft": false,
+          "repository": {
+            "nameWithOwner": "example-org/widgets"
+          },
+          "reviewDecision": "CHANGES_REQUESTED",
+          "latestReviews": {
+            "nodes": []
+          },
+          "reviews": {
+            "nodes": [
+              {
+                "state": "DISMISSED",
+                "submittedAt": "2026-11-17T10:50:00Z",
+                "author": {
+                  "login": "sam-example"
+                }
+              },
+              {
+                "state": "CHANGES_REQUESTED",
+                "submittedAt": "2026-11-17T10:55:00Z",
+                "author": {
+                  "login": "alex-example"
+                }
+              },
+              {
+                "state": "APPROVED",
+                "submittedAt": "2026-11-17T09:00:00Z",
+                "author": {
+                  "login": "jo-example"
+                }
+              },
+              {
+                "state": "CHANGES_REQUESTED",
+                "submittedAt": "2026-11-16T09:00:00Z",
+                "author": {
+                  "login": "jo-example"
+                }
+              }
+            ]
+          },
+          "reviewThreads": {
+            "nodes": []
+          }
         },
         {}
       ]

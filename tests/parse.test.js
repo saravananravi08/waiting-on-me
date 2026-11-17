@@ -29,10 +29,25 @@ test('review requested: rejects output that is not a list', () => {
 test('my PRs: changes requested names the latest reviewer who asked', () => {
   const items = parse.parseMyPrs(fixture('github-my-prs.json'), 'me-example');
   const changes = items.filter((i) => i.kind === 'changes requested');
-  assert.equal(changes.length, 1);
-  assert.equal(changes[0].who, 'alex-example');
-  assert.equal(changes[0].since, '2026-11-15T23:00:00Z');
-  assert.equal(changes[0].ref, 'example-org/widgets#120');
+  assert.equal(changes.length, 2);
+  const pr120 = changes.find((i) => i.ref.endsWith('#120'));
+  assert.equal(pr120.who, 'alex-example');
+  assert.equal(pr120.since, '2026-11-15T23:00:00Z');
+});
+
+test('my PRs: when latestReviews is empty, the review history says who is asking', () => {
+  const items = parse.parseMyPrs(fixture('github-my-prs.json'), 'me-example');
+  const pr123 = items.find((i) => i.kind === 'changes requested' && i.ref.endsWith('#123'));
+  // alex-example asked most recently; jo-example approved after asking, so no longer asks.
+  assert.equal(pr123.who, 'alex-example');
+  assert.equal(pr123.since, '2026-11-17T10:55:00Z');
+});
+
+test('my PRs: with no review data at all the decision still shows, naming no one', () => {
+  const data = { data: { search: { nodes: [{ number: 5, title: 't', url: 'https://github.com/o/r/pull/5', updatedAt: '2026-11-17T01:00:00Z', repository: { nameWithOwner: 'o/r' }, reviewDecision: 'CHANGES_REQUESTED' }] } } };
+  const [item] = parse.parseMyPrs(data, 'me');
+  assert.equal(item.who, 'unknown');
+  assert.equal(item.since, '2026-11-17T01:00:00Z');
 });
 
 test('my PRs: review comments ignore resolved, outdated and my own threads', () => {
