@@ -123,3 +123,11 @@ test('dedupe keeps one item per kind and link; sort puts urgent and oldest first
   const out = parse.sortItems(parse.dedupe([a, b, c, d]));
   assert.deepEqual(out, [c, d, a]);
 });
+
+test('notifications: a mention where I wrote the latest comment is dropped, a review request is kept', () => {
+  const authors = { 1001: 'me-example', 1002: 'me-example', 1003: 'jo-example' };
+  const items = parse.parseNotifications(fixture('github-notifications.json'), authors, 'me-example');
+  assert.equal(items.some((i) => i.ref === 'example-org/widgets#55'), false, 'I answered last on that thread');
+  assert.equal(items.some((i) => i.kind === 'review requested'), true);
+  assert.equal(items.filter((i) => i.kind === 'mention').length, 2);
+});

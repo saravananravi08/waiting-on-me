@@ -74,6 +74,7 @@ async function githubMyPrs() {
 }
 
 async function githubNotifications() {
+  const me = await gh(['api', 'user', '--jq', '.login']).then((t) => t.trim()).catch(() => '');
   const out = await gh(['api', 'notifications?all=false&per_page=50']);
   const list = json(out, 'gh notifications');
   if (!Array.isArray(list)) throw new Error('unexpected notifications output (not a list)');
@@ -94,7 +95,7 @@ async function githubNotifications() {
       }
     })
   );
-  return parse.parseNotifications(list, authors);
+  return parse.parseNotifications(list, authors, me);
 }
 
 async function fetchGithub() {

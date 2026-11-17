@@ -8,7 +8,7 @@ Everything is read-only and uses your own logins. No server, no stored tokens, n
 
 - A summary at session start: a count per kind and the top five items, also given to Claude as context.
 - `/waiting`: refreshes now and prints the full table.
-- A dashboard at `~/.cache/waiting-on-me/index.html`, regenerated on every refresh. Open it in any browser. It reloads itself at the refresh interval, follows your light or dark setting, and reads well on a phone or a desktop.
+- A dashboard at `~/.cache/waiting-on-me/index.html`, regenerated on every refresh. Open it in any browser. It shows a chart of how long each item has waited, lets you filter by kind, person and source, search, and change the order, and opens every link in a new tab. It reloads itself at the refresh interval and keeps your filters, follows your light or dark setting, and works on a phone or a desktop.
 - An optional status line snippet showing the count.
 
 Each item has a source, who is asking, what it is, a link, since when (DD/MM/YYYY HH:mm, 24-hour, your local time zone) and a kind.
@@ -141,6 +141,7 @@ Remove the `statusLine` entry from `~/.claude/settings.json` if you added it.
 ## Known limits
 
 - Org-wide GitHub search relies on what `gh` can see with your login. SSO-protected organisations need your token authorised for SSO, or their items will be missing.
+- A GitHub mention is left out when you wrote the latest comment on that thread, since nobody is waiting on you there.
 - Mentions are limited to your 50 most recent unread GitHub notifications and 50 most recent Linear notifications. Who is asking is looked up for the first 20 GitHub mentions; if a lookup fails the name shows as "unknown".
 - Linear comments that mention you are found through your unread mention notifications. A mention you have already read in Linear is not listed. The sender is read from the notification text; if it cannot be, it shows as "unknown".
 - Times use your machine's time zone. Set `WAITING_ON_ME_TZ` (for example `Australia/Sydney`) to override.

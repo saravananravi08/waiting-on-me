@@ -127,12 +127,15 @@ function apiUrlToHtml(apiUrl, repoFullName) {
 
 // notifications: GET /notifications (unread). authors: { [notificationId]: login }
 // fetched separately, since the list does not say who is asking.
-function parseNotifications(list, authors = {}) {
+// me: my own login. A mention on a thread where I wrote the latest comment is dropped:
+// I have already answered, so nobody is waiting on me there.
+function parseNotifications(list, authors = {}, me = '') {
   if (!Array.isArray(list)) throw new Error('unexpected notifications output (not a list)');
   const items = [];
   for (const n of list) {
     const kind = GITHUB_NOTIFICATION_REASONS[n && n.reason];
     if (!kind || n.unread === false) continue;
+    if (kind === 'mention' && me && authors[n.id] === me) continue;
     const repo = n.repository && n.repository.full_name;
     const subject = n.subject || {};
     const number = typeof subject.url === 'string' ? subject.url.match(/\/(\d+)$/) : null;

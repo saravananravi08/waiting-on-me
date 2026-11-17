@@ -90,14 +90,16 @@ test('html is escaped, links only https, refresh matches the interval, light and
   assert.doesNotMatch(page, /<script>alert/);
   assert.doesNotMatch(page, /<img src=x>/);
   assert.doesNotMatch(page, /href="javascript:/);
-  assert.match(page, /<a href="https:\/\/github\.com\/o\/r\/pull\/1"/);
+  assert.match(page, /<a href="https:\/\/github\.com\/o\/r\/pull\/1" target="_blank" rel="noopener noreferrer">/, 'links open in a new tab');
+  assert.equal((page.match(/<a /g) || []).length, (page.match(/target="_blank"/g) || []).length, 'every link opens in a new tab');
   assert.match(page, /<meta http-equiv="refresh" content="420">/);
   assert.match(page, /prefers-color-scheme:dark/);
   assert.match(page, /name="viewport" content="width=device-width/);
   assert.match(page, /@media \(max-width:640px\)/);
   assert.match(page, /As of 17\/11\/2026|As of \d\d\/\d\d\/\d{4} \d\d:\d\d/);
-  assert.doesNotMatch(page, /<script/i, 'no scripts at all, and no external resources');
-  assert.doesNotMatch(page, /https?:\/\/[^"' ]+\.(css|js)/);
+  assert.equal((page.match(/<script/gi) || []).length, 1, 'only the page\'s own inline script');
+  assert.doesNotMatch(page, /<script[^>]+src=|<link[^>]+href=|@import|url\(/i, 'self-contained: no external files');
+  assert.doesNotMatch(page.slice(page.indexOf('<script>')), /Safe|alert\(1\)|github\.com/, 'no item data inside the script');
 });
 
 test('html shows source problems and never an empty-looking all clear when nothing was readable', () => {
@@ -106,4 +108,27 @@ test('html shows source problems and never an empty-looking all clear when nothi
   assert.match(page, /GitHub failed: gh timed out/);
   assert.match(page, /No source could be read/);
   assert.doesNotMatch(page, /Nothing is waiting on you/);
+});
+
+test('cockpit: rows carry what the filters need, groups follow kind order, waits are readable', () => {
+  const page = render.html(result({ items: [
+    item({ kind: 'mention', url: 'https://github.com/o/r/issues/2', since: '2026-11-17T05:50:00Z' }),
+    item({ since: '2026-11-05T06:30:00Z' }),
+  ] }));
+  assert.match(page, /data-row data-kind="review requested" data-source="github"/);
+  assert.match(page, /data-text="[^"]*alex-example[^"]*"/);
+  assert.ok(page.indexOf('data-group="review requested"') < page.indexOf('data-group="mention"'));
+  assert.match(page, /<span class="age">12 d<\/span>/);
+  assert.match(page, /<span class="age">40 min<\/span>/);
+  assert.match(page, /data-pick="kind" data-value="mention"/);
+  assert.match(page, /data-pick="source" data-value="github"/);
+  assert.doesNotMatch(page, /data-group="assigned"/, 'a kind with no items has no empty group');
+});
+
+test('waited: minutes, hours and days', () => {
+  const now = '2026-11-17T12:00:00Z';
+  assert.equal(render.waited('2026-11-17T11:58:00Z', now).text, '2 min');
+  assert.equal(render.waited('2026-11-17T07:00:00Z', now).text, '5 h');
+  assert.equal(render.waited('2026-11-10T12:00:00Z', now).text, '7 d');
+  assert.equal(render.waited('nonsense', now).text, 'unknown');
 });
