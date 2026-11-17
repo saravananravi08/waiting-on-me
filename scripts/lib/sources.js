@@ -79,7 +79,7 @@ async function githubNotifications() {
   const list = json(out, 'gh notifications');
   if (!Array.isArray(list)) throw new Error('unexpected notifications output (not a list)');
   const wanted = list
-    .filter((n) => n && ['mention', 'team_mention', 'review_requested'].includes(n.reason))
+    .filter((n) => n && ['mention', 'team_mention'].includes(n.reason))
     .slice(0, MAX_AUTHOR_LOOKUPS);
   // The list does not say who is asking. Look at the latest comment, else the subject, best effort.
   const authors = {};

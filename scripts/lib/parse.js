@@ -19,8 +19,9 @@ const KIND_PROVIDERS = {
   assigned: ['linear'],
 };
 
+// Review requests are not read from notifications: a notification stays unread after the
+// pull request is merged or reviewed. The search of open pull requests is the source for those.
 const GITHUB_NOTIFICATION_REASONS = {
-  review_requested: 'review requested',
   mention: 'mention',
   team_mention: 'mention',
 };

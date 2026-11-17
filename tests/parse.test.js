@@ -74,20 +74,25 @@ test('my PRs: a malformed response is an error, not an empty list', () => {
   assert.throws(() => parse.parseMyPrs({ errors: [{ message: 'nope' }] }, 'x'), /unexpected/);
 });
 
-test('notifications: keeps mentions and review requests only, uses fetched authors', () => {
+test('notifications: keeps mentions only, uses fetched authors', () => {
   const items = parse.parseNotifications(fixture('github-notifications.json'), { 1001: 'jo-example' });
-  assert.deepEqual(items.map((i) => i.kind), ['mention', 'review requested', 'mention', 'mention']);
+  assert.deepEqual(items.map((i) => i.kind), ['mention', 'mention', 'mention']);
   assert.equal(items[0].who, 'jo-example');
   assert.equal(items[1].who, 'unknown');
   assert.equal(items[0].url, 'https://github.com/example-org/widgets/issues/55');
   assert.equal(items[0].ref, 'example-org/widgets#55');
-  assert.equal(items[1].url, 'https://github.com/example-org/widgets/pull/41');
+});
+
+test('notifications: a review request notification is ignored, since it outlives a merged pull request', () => {
+  const items = parse.parseNotifications(fixture('github-notifications.json'));
+  assert.equal(items.some((i) => i.kind === 'review requested'), false);
+  assert.equal(items.some((i) => i.url.endsWith('/pull/41')), false);
 });
 
 test('notifications: commits and subjects with no url fall back safely', () => {
   const items = parse.parseNotifications(fixture('github-notifications.json'));
-  assert.equal(items[2].url, 'https://github.com/example-org/tools/commit/abc123');
-  assert.equal(items[3].url, 'https://github.com/example-org/tools');
+  assert.equal(items[1].url, 'https://github.com/example-org/tools/commit/abc123');
+  assert.equal(items[2].url, 'https://github.com/example-org/tools');
 });
 
 test('apiUrlToHtml handles pulls, issues and unknown shapes', () => {
@@ -128,7 +133,6 @@ test('notifications: a mention where I wrote the latest comment is dropped, a re
   const authors = { 1001: 'me-example', 1002: 'me-example', 1003: 'jo-example' };
   const items = parse.parseNotifications(fixture('github-notifications.json'), authors, 'me-example');
   assert.equal(items.some((i) => i.ref === 'example-org/widgets#55'), false, 'I answered last on that thread');
-  assert.equal(items.some((i) => i.kind === 'review requested'), true);
   assert.equal(items.filter((i) => i.kind === 'mention').length, 2);
 });
 
