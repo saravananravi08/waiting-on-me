@@ -23,6 +23,7 @@ type Reply = { content?: Block[]; isError?: boolean }
 
 let busy = false
 let isFirstRun = true
+const toasted = new Set<string>()
 
 function textOf(r: Reply): string {
   return (r.content ?? []).filter(b => b.type === 'text').map(b => b.text ?? '').join('')
@@ -201,6 +202,17 @@ async function tick($: any) {
     // Fold the new data into latest.json, the dashboard and the count. --merge reuses the
     // GitHub result the refresher already fetched, so GitHub is not asked twice.
     await $.process.run(['node', `${$.plugin.root}/scripts/collect`, '--quiet', '--merge'], { timeoutMs: 90_000 })
+
+    // Tell the person straight away about nudges that have just arrived.
+    try {
+      const latest = JSON.parse(await $.fs.read(`${dir}/latest.json`))
+      const fresh = (latest.items ?? []).filter((i: { kind?: string; url?: string }) => i.kind === 'nudge' && i.url && !toasted.has(i.url))
+      for (const n of fresh) toasted.add(n.url)
+      if (fresh.length === 1) $.ui.toast(`waiting-on-me: ${String(fresh[0].who).slice(0, 40)} is waiting on you. Run /waiting to see it.`)
+      else if (fresh.length > 1) $.ui.toast(`waiting-on-me: ${fresh.length} new nudges. Run /waiting to see them.`)
+    } catch {
+      // no result to read yet
+    }
 
     if (patient) {
       // The summary at session start was built before these connections were ready.

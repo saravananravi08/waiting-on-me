@@ -10,6 +10,7 @@ const config = require(path.join(__dirname, 'lib', 'config.js'));
 const proc = require(path.join(__dirname, 'lib', 'proc.js'));
 const collect = require(path.join(__dirname, 'lib', 'collect.js'));
 const render = require(path.join(__dirname, 'lib', 'render.js'));
+const notify = require(path.join(__dirname, 'lib', 'notify.js'));
 
 const FRESH_MS = 60 * 1000;
 const COLLECT_BUDGET_MS = 15000;
@@ -43,6 +44,8 @@ function main() {
     // the summary is still useful without the refresher
   }
   if (!latest) return;
+  // Nudges in this summary have been announced; only later ones are announced again.
+  if (input.session_id) notify.markSeen(input.session_id, notify.newNudges(latest, new Set()).map((n) => n.url), p);
 
   const stale = collect.ageMs(latest) > config.intervalMinutes() * 2 * 60 * 1000;
   const context = render.summary(latest, { dashboardPath: config.dashboardUrl() ? `${config.dashboardUrl()} (file: ${p.html})` : p.html }) + (stale ? '\nNote: this data is older than expected; the refresh may have failed.' : '');

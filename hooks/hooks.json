@@ -1,5 +1,5 @@
 {
-  "description": "Shows who is waiting on you at session start and keeps one shared refresher running while any session is open.",
+  "description": "Shows who is waiting on you at session start, tells the session about new nudges as they arrive, and keeps one shared refresher running while any session is open.",
   "hooks": {
     "SessionStart": [
       {
@@ -18,6 +18,28 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/session-end.js\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/notify.js\" stop",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/notify.js\" prompt",
             "timeout": 10
           }
         ]
