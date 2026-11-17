@@ -1,6 +1,6 @@
 {
   "name": "waiting-on-me",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Shows who is waiting on you, from GitHub and Linear, when Claude Code starts, and keeps itself fresh.",
   "author": {
     "name": "saravananravi08"
