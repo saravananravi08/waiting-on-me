@@ -99,7 +99,8 @@ test('html is escaped, links only https, refresh matches the interval, light and
   assert.match(page, /As of 17\/11\/2026|As of \d\d\/\d\d\/\d{4} \d\d:\d\d/);
   assert.equal((page.match(/<script/gi) || []).length, 1, 'only the page\'s own inline script');
   assert.doesNotMatch(page, /<script[^>]+src=|<link[^>]+href=|@import|url\(/i, 'self-contained: no external files');
-  assert.doesNotMatch(page.slice(page.indexOf('<script>')), /Safe|alert\(1\)|github\.com/, 'no item data inside the script');
+  assert.doesNotMatch(page.slice(page.indexOf('<script>'), page.indexOf('</script>')), /Safe|alert\(1\)|github\.com/, 'no item data inside the script');
+  assert.match(page, /:root\[data-theme="dark"\]/, 'dark can be chosen as well as followed');
 });
 
 test('html shows source problems and never an empty-looking all clear when nothing was readable', () => {

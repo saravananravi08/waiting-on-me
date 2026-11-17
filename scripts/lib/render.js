@@ -314,10 +314,12 @@ ${rows}
 <meta name="color-scheme" content="light dark">
 <title>Waiting on me</title>
 <style>
-:root{--bg:#f2f4f8;--panel:#ffffff;--raised:#f6f7fb;--ink:#121829;--ink2:#47516a;--muted:#6f7a92;--line:#e2e6ef;--link:#1c5cab;--ring:#1c5cab;--note:#8a5a00;--ok:#0ca30c;--bad:#d03b3b;--warn:#c98500;--off:#a3acbd;
+:root{--bg:#f3f4f6;--panel:#ffffff;--raised:#f6f7f9;--ink:#15181d;--ink2:#474d57;--muted:#6c737f;--line:#e3e5e9;--link:#1c5cab;--ring:#1c5cab;--note:#8a5a00;--ok:#0ca30c;--bad:#d03b3b;--warn:#c98500;--off:#a6acb5;
 --k-nudge:#2a78d6;--k-changes-requested:#eb6834;--k-review-requested:#1baf7a;--k-review-comment:#eda100;--k-mention:#e87ba4;--k-assigned:#008300}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a1020;--panel:#111a2c;--raised:#172238;--ink:#edf1f9;--ink2:#b9c2d6;--muted:#8490a8;--line:#222e47;--link:#86b6ef;--ring:#86b6ef;--note:#e6bb62;--ok:#0ca30c;--bad:#e66767;--warn:#c98500;--off:#56627a;
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#16181c;--panel:#1e2126;--raised:#272b31;--ink:#eef0f3;--ink2:#c0c5cd;--muted:#8d949f;--line:#32373f;--link:#86b6ef;--ring:#86b6ef;--note:#e6bb62;--ok:#0ca30c;--bad:#e66767;--warn:#c98500;--off:#5c636e;
 --k-nudge:#3987e5;--k-changes-requested:#d95926;--k-review-requested:#199e70;--k-review-comment:#c98500;--k-mention:#d55181;--k-assigned:#0ca30c}}
+:root[data-theme="dark"]{--bg:#16181c;--panel:#1e2126;--raised:#272b31;--ink:#eef0f3;--ink2:#c0c5cd;--muted:#8d949f;--line:#32373f;--link:#86b6ef;--ring:#86b6ef;--note:#e6bb62;--ok:#0ca30c;--bad:#e66767;--warn:#c98500;--off:#5c636e;
+--k-nudge:#3987e5;--k-changes-requested:#d95926;--k-review-requested:#199e70;--k-review-comment:#c98500;--k-mention:#d55181;--k-assigned:#0ca30c}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
 button,input,select{font:inherit;color:inherit}
@@ -438,49 +440,21 @@ footer{color:var(--muted);font-size:.8rem;margin-top:10px}
 }
 @media (prefers-reduced-motion:reduce){.row.flash{animation:none}.dot{transition:none}}
 </style>
-</head>
-<body>
-<div class="page">
-<header class="top">
-<span class="brand">Waiting on me</span>
-<span class="asof">As of ${esc(formatDate(result.fetchedAt))}. Reloads every ${interval} ${interval === 1 ? 'minute' : 'minutes'}.</span>
-<ul class="sources" aria-label="Sources">
-${sourcePicks}
-</ul>
-</header>
-<section class="lead">
-<h1>${esc(headline)}</h1>
-${leadHtml}
-${banners}
-</section>
-${chart}
-<div class="body">
-<aside class="side" aria-label="Filters"${n ? '' : ' hidden'}>
-<section><h2 id="by-kind">Kind</h2><ul class="picks" aria-labelledby="by-kind">
-${kindPicks}
-</ul></section>
-<section><h2 id="by-who">Who is waiting</h2><ul class="picks" aria-labelledby="by-who">
-${peoplePicks}
-</ul></section>
-</aside>
-<main>
-<div class="tools"${n ? '' : ' hidden'}>
-<input type="search" id="q" placeholder="Search by title, person or repo. Press / to start." aria-label="Search the list" autocomplete="off">
-<select id="sort" aria-label="Order">
-<option value="longest">Longest wait first</option>
-<option value="newest">Newest first</option>
-</select>
-<button type="button" id="clear" hidden>Clear filters</button>
-</div>
-<p class="showing" id="showing"></p>
-${groups}
-<p class="empty" id="nomatch" hidden>Nothing matches these filters. Clear filters to see everything.</p>
-<footer>Read-only view built from your own GitHub, Linear and Slack logins. Links open in a new tab. Times are in your local time zone.</footer>
-</main>
-</div>
-</div>
 <script>
 (function () {
+  var root = document.documentElement, THEMES = ['system', 'light', 'dark'], theme = 'system';
+  try { var saved = localStorage.getItem('wom-theme'); if (THEMES.indexOf(saved) > 0) theme = saved; } catch (e) {}
+  function paint() { if (theme === 'system') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', theme); }
+  paint();
+  document.addEventListener('DOMContentLoaded', function () {
+  var themeButton = document.getElementById('theme');
+  function label() { themeButton.textContent = 'Theme: ' + theme; }
+  themeButton.addEventListener('click', function () {
+    theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
+    try { localStorage.setItem('wom-theme', theme); } catch (e) {}
+    paint(); label();
+  });
+  label();
   var $ = function (s) { return [].slice.call(document.querySelectorAll(s)); };
   var rows = $('[data-row]'), groups = $('[data-group]'), picks = $('[data-pick]'), dots = $('[data-goto]');
   var q = document.getElementById('q'), sort = document.getElementById('sort');
@@ -582,8 +556,51 @@ ${groups}
 
   order();
   apply();
+  });
 })();
 </script>
+</head>
+<body>
+<div class="page">
+<header class="top">
+<span class="brand">Waiting on me</span>
+<span class="asof">As of ${esc(formatDate(result.fetchedAt))}. Reloads every ${interval} ${interval === 1 ? 'minute' : 'minutes'}.</span>
+<ul class="sources" aria-label="Sources">
+${sourcePicks}
+</ul>
+<button type="button" class="src-pill" id="theme" aria-label="Change colour theme">Theme: system</button>
+</header>
+<section class="lead">
+<h1>${esc(headline)}</h1>
+${leadHtml}
+${banners}
+</section>
+${chart}
+<div class="body">
+<aside class="side" aria-label="Filters"${n ? '' : ' hidden'}>
+<section><h2 id="by-kind">Kind</h2><ul class="picks" aria-labelledby="by-kind">
+${kindPicks}
+</ul></section>
+<section><h2 id="by-who">Who is waiting</h2><ul class="picks" aria-labelledby="by-who">
+${peoplePicks}
+</ul></section>
+</aside>
+<main>
+<div class="tools"${n ? '' : ' hidden'}>
+<input type="search" id="q" placeholder="Search by title, person or repo. Press / to start." aria-label="Search the list" autocomplete="off">
+<select id="sort" aria-label="Order">
+<option value="longest">Longest wait first</option>
+<option value="newest">Newest first</option>
+</select>
+<button type="button" id="clear" hidden>Clear filters</button>
+</div>
+<p class="showing" id="showing"></p>
+${groups}
+<p class="empty" id="nomatch" hidden>Nothing matches these filters. Clear filters to see everything.</p>
+<footer>Read-only view built from your own GitHub, Linear and Slack logins. Links open in a new tab. Times are in your local time zone.</footer>
+</main>
+</div>
+</div>
 </body>
 </html>
 `;
