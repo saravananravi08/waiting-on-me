@@ -1,0 +1,29 @@
+#!/usr/bin/env node
+'use strict';
+// Gathers GitHub and Linear into ~/.cache/waiting-on-me/latest.json (plus index.html and count.txt).
+// Usage: collect [--quiet] [--json]
+//   --quiet  print nothing on success
+//   --json   print the result as JSON (never contains credentials)
+const path = require('path');
+const { refresh } = require(path.join(__dirname, 'lib', 'collect.js'));
+const config = require(path.join(__dirname, 'lib', 'config.js'));
+const render = require(path.join(__dirname, 'lib', 'render.js'));
+
+const args = new Set(process.argv.slice(2));
+
+refresh({ waitIfBusy: true })
+  .then(({ result, skipped }) => {
+    if (!result) {
+      console.error('waiting-on-me: another fetch was running and nothing was written');
+      process.exit(1);
+    }
+    if (args.has('--json')) console.log(JSON.stringify(result, null, 2));
+    else if (!args.has('--quiet')) {
+      console.log(render.banner(result));
+      console.log(`  wrote ${config.paths().latest}${skipped ? ' (reused a fetch already in progress)' : ''}`);
+    }
+  })
+  .catch((err) => {
+    console.error(`waiting-on-me: ${config.scrub(err && err.message ? err.message : err)}`);
+    process.exit(1);
+  });
