@@ -154,3 +154,14 @@ test('table: a short list is shown whole, and a limit of 0 prints everything', (
   const all = render.table(result({ items }), { dashboardPath: '/x/index.html', limit: 0 });
   assert.equal(all.split('\n').filter((l) => /^\| \d+ \|/.test(l)).length, 25);
 });
+
+test('summary: nudges already waiting at session start get an instruction to point them out with a suggestion', () => {
+  const one = render.summary(result({ items: [item({ kind: 'nudge', source: 'slack', url: 'https://slack.com/app_redirect?channel=C1&message_ts=1' })] }));
+  assert.match(one, /One nudge is listed above/);
+  assert.match(one, /In your first reply to the user, whatever they ask/);
+  assert.match(one, /one concrete suggestion/);
+  assert.match(one, /act only if the user says yes/);
+  const two = render.summary(result({ items: [item({ kind: 'nudge', source: 'slack', url: 'u1' }), item({ kind: 'nudge', source: 'slack', url: 'u2' })] }));
+  assert.match(two, /2 nudges are listed above/);
+  assert.doesNotMatch(render.summary(result({ items: [item()] })), /nudge/i, 'no nudge, no instruction');
+});
