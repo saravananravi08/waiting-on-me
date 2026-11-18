@@ -81,3 +81,11 @@ test('a finished session is forgotten', () => {
   notify.forgetSession('s9', p);
   assert.equal(fs.existsSync(notify.seenFile('s9', p)), false);
 });
+
+test('session start does not mark waiting nudges as seen, so the first prompt announces them', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'session-start.js'), 'utf8');
+  assert.doesNotMatch(src, /markSeen/, 'a nudge listed in the start summary must still be announced with the first prompt');
+  const env = home([nudge(1)]);
+  const out = JSON.parse(run('prompt', { session_id: 'fresh-session' }, env));
+  assert.match(out.hookSpecificOutput.additionalContext, /Answer the user's prompt first/);
+});

@@ -44,8 +44,6 @@ function main() {
     // the summary is still useful without the refresher
   }
   if (!latest) return;
-  // Nudges in this summary have been announced; only later ones are announced again.
-  if (input.session_id) notify.markSeen(input.session_id, notify.newNudges(latest, new Set()).map((n) => n.url), p);
 
   const stale = collect.ageMs(latest) > config.intervalMinutes() * 2 * 60 * 1000;
   const context = render.summary(latest, { dashboardPath: config.dashboardUrl() ? `${config.dashboardUrl()} (file: ${p.html})` : p.html }) + (stale ? '\nNote: this data is older than expected; the refresh may have failed.' : '');
