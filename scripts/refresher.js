@@ -26,15 +26,22 @@ async function main() {
     proc.releasePid(p);
     process.exit(0);
   };
-  // Serve the dashboard on this machine only. If the port is taken, carry on without it.
+  // Serve the dashboard on this machine only. If the port is taken (for example by a
+  // refresher that is still shutting down), carry on and try again every few seconds.
   const port = config.dashboardPort();
-  if (port) {
+  let serving = !port;
+  let lastBind = 0;
+  const bind = async () => {
+    lastBind = Date.now();
     try {
       await require(path.join(__dirname, 'lib', 'server.js')).start({ port, file: p.html });
+      serving = true;
     } catch (err) {
-      log(`dashboard server not started on port ${port}: ${err && err.code ? err.code : err}`);
+      if (!bind.logged) log(`dashboard server not started on port ${port}: ${err && err.code ? err.code : err}`);
+      bind.logged = true;
     }
-  }
+  };
+  if (!serving) await bind();
   process.on('SIGTERM', stop);
   process.on('SIGINT', stop);
 
@@ -42,6 +49,7 @@ async function main() {
   for (;;) {
     if (!proc.ownsPid(p)) return;
     if (proc.liveSessions(p) === 0) break;
+    if (!serving && Date.now() - lastBind >= 10000) await bind();
 
     const intervalMs = config.intervalMinutes() * 60 * 1000;
     const latest = readLatest(p);
