@@ -17,6 +17,8 @@ const FIND_ATTEMPTS = 10
 const FIND_WAIT_MS = 4_000
 const MAX_THREADS = 10
 const MAX_LOOKUPS = 25
+const REACTED_FILE = 'reacted.json'
+const SEEN_EMOJI = 'eyes'
 const TAG = '[wom:v1]'
 
 type Block = { type?: string; text?: string }
@@ -42,6 +44,14 @@ function inner(text: string, key: string): string {
 
 function errorText(err: unknown): string {
   return String((err as Error)?.message ?? err).slice(0, 200)
+}
+
+// Opt-in: with WAITING_ON_ME_SEEN_REACTION=on, a nudge addressed to this person gets an eyes
+// reaction once their plugin has it, so the sender can see it arrived. It is added under the
+// person's own Slack name, once per nudge, and is the only thing this module ever writes to Slack.
+async function seenReactionOn($: any): Promise<boolean> {
+  const out = await $.process.run(['sh', '-c', 'printf %s "${WAITING_ON_ME_SEEN_REACTION:-off}"'])
+  return /^(on|yes|true|1)$/i.test(String(out.stdout).trim())
 }
 
 async function cacheDir($: any): Promise<string> {
@@ -206,6 +216,26 @@ async function fetchSlack($: any, dir: string, patient: boolean) {
             }
           }
           record.threads = threads
+
+          // Let the sender see that it arrived (opt-in, once per nudge).
+          if (await seenReactionOn($)) {
+            let reacted: string[] = []
+            try {
+              reacted = JSON.parse(await $.fs.read(`${dir}/${REACTED_FILE}`))
+            } catch {
+              // nothing reacted to yet
+            }
+            const todo = wanted.filter(ts => !reacted.includes(ts))
+            for (const ts of todo) {
+              try {
+                const r = await $.mcp.call(server, 'slack_add_reaction', { channel_id: channelId, message_ts: ts, emoji: SEEN_EMOJI })
+                if (!r.isError) reacted.push(ts)
+              } catch {
+                // try again at the next refresh
+              }
+            }
+            if (todo.length > 0) await $.fs.write(`${dir}/${REACTED_FILE}`, JSON.stringify(reacted.slice(-200)))
+          }
         }
       }
     }

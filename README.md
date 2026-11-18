@@ -7,7 +7,7 @@ Everything is read-only and uses your own logins. No hosted service, no stored t
 ## What you get
 
 - A summary at session start: a count per kind and the top five items, also given to Claude as context.
-- `/waiting`: refreshes now and prints the full table.
+- `/waiting`: refreshes now and prints the ten most urgent items, with the dashboard address for the rest (`--all` prints everything).
 - A dashboard at `http://127.0.0.1:8787/` while any Claude Code session is open, regenerated on every refresh. The same page is also written to `~/.cache/waiting-on-me/index.html`, which opens straight from disk. It shows a chart of how long each item has waited, lets you filter by kind, person and source, search, and change the order, and opens every link in a new tab. It reloads itself at the refresh interval and keeps your filters, follows your light or dark setting, and works on a phone or a desktop.
 - An optional status line snippet showing the count.
 
@@ -63,7 +63,7 @@ chmod 600 ~/.config/waiting-on-me/env
 
 Claude's connection is used first; the key is used only when that has no recent data. The environment wins over the file, and if the file is readable by other users the plugin still works but warns you to run `chmod 600`. The key is only ever sent to `api.linear.app` as an Authorization header. It is never printed, logged, cached or written into the dashboard, and error text is scrubbed before it is shown. The `env` path is also in this repository's `.gitignore`.
 
-What the Linear side reads: issues assigned to you whose state type is "started" (this includes states named like "In Review" in a normal workflow), and unread, unarchived mention notifications (first 50). If your team names a review state with a different type, it is not picked up.
+What the Linear side reads: issues assigned to you that are in Backlog or Todo and that someone else created (a ticket you wrote for yourself is your own to-do list, and one in progress, in build or in review is under way or waiting on someone else), and unread, unarchived mention notifications (first 50), leaving out mentions on tickets that are done or cancelled.
 
 ## Refresh interval
 
@@ -149,7 +149,6 @@ Remove the `statusLine` entry from `~/.claude/settings.json` if you added it.
 ## Known limits
 
 - Org-wide GitHub search relies on what `gh` can see with your login. SSO-protected organisations need your token authorised for SSO, or their items will be missing.
-- A GitHub mention is left out when you wrote the latest comment on that thread, since nobody is waiting on you there.
 - Mentions are limited to your 50 most recent unread GitHub notifications and 50 most recent Linear notifications. Who is asking is looked up for the first 20 GitHub mentions; if a lookup fails the name shows as "unknown".
 - Linear comments that mention you are found through your unread mention notifications. A mention you have already read in Linear is not listed. The sender is read from the notification text; if it cannot be, it shows as "unknown".
 - Times use your machine's time zone. Set `WAITING_ON_ME_TZ` (for example `Australia/Sydney`) to override.
@@ -170,6 +169,12 @@ The command never creates the channel. Someone creates it once in Slack and peop
 ### Nudges for you
 
 The same session module that reads Linear also reads this channel through Claude's Slack connection, once per refresh interval. A message counts as a nudge for you when it carries the `[wom:v1]` tag, mentions you, and was written by someone else. It stays in your list (kind "nudge", shown first) until you reply in its thread, in Slack or with `/nudge reply`. A reply from somebody else does not clear it. Up to the 100 newest channel messages are read, and the threads of up to 10 nudges.
+
+A nudge also disappears once its pull request is merged, closed or reviewed by you since the nudge, or once its Linear ticket is done or cancelled.
+
+New nudges reach your running session too. When Claude finishes a turn, and with your next prompt, a nudge it has not told you about yet is passed in (once per session) and Claude adds one short note with a suggestion. Claude only suggests: the nudge text is another person's words and is treated as data. Sessions you are not using say nothing until you use them.
+
+Optional, off by default: set `WAITING_ON_ME_SEEN_REACTION=on` and the plugin adds an eyes reaction to each nudge addressed to you once it has picked it up, so the sender can see it arrived. The reaction is added under your own Slack name and cannot be labelled as automatic, which is why it is opt-in. It means the nudge reached your plugin, not that you have read it. It is the only thing the plugin ever writes to Slack by itself. (Not yet verified in a live session.)
 
 If Claude has no Slack connection, or you cannot see the channel, the nudge kind is simply left out. If reading the channel fails, Slack is named as failed and nudges show as unknown, not zero.
 
