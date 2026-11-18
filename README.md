@@ -172,7 +172,7 @@ The same session module that reads Linear also reads this channel through Claude
 
 A nudge also disappears once its pull request is merged, closed or reviewed by you since the nudge, or once its Linear ticket is done or cancelled.
 
-New nudges reach your running session too. When Claude finishes a turn, and with your next prompt, a nudge it has not told you about yet is passed in (once per session) and Claude adds one short note with a suggestion. Claude only suggests: the nudge text is another person's words and is treated as data. Sessions you are not using say nothing until you use them.
+New nudges reach your running session too. When Claude finishes a turn, and with your next prompt, a nudge it has not told you about yet is passed in (once per session) and Claude adds one short note with a suggestion. Claude only suggests: the nudge text is another person's words and is treated as data. A nudge that is already waiting when a session starts is announced the same way, with your first prompt, so type anything and Claude raises it in its first answer. Sessions you are not using say nothing until you use them.
 
 Optional, off by default: set `WAITING_ON_ME_SEEN_REACTION=on` and the plugin adds an eyes reaction to each nudge addressed to you once it has picked it up, so the sender can see it arrived. The reaction is added under your own Slack name and cannot be labelled as automatic, which is why it is opt-in. It means the nudge reached your plugin, not that you have read it. It is the only thing the plugin ever writes to Slack by itself. (Not yet verified in a live session.)
 
